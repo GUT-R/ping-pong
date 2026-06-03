@@ -1,29 +1,29 @@
-class BoundBox:
+class Rect:
     def __init__(self, y: int, x: int, w: int, h: int):
         self.y = y
         self.x = x
         self.w = w
         self.h = h
-    def collision(self, b: BoundBox):
-        return (
-            self.x < b.x - b.w and
-            self.x + self.w > b.x and
-            self.y < b.y + b.h and
-            self.y + self.h > b.y
-        )
+def collision(r1: Rect, r2: Rect):
+    return (
+        r1.x < r2.x - r2.w and
+        r1.x + r1.w > r2.x and
+        r1.y < r2.y + r2.h and
+        r1.y + r1.h > r2.y
+    )
 class Display:
     def __init__(self, w: int, h: int, background_char: str):
         self.w = w
         self.h = h
         self.bkg = background_char
         self.matrix = [[self.bkg for _ in range(w)] for _ in range(h)]
-    def clear(self, box: BoundBox):
+    def clear(self, box: Rect):
         for i in range(box.y, box.y + box.h):
             for j in range(box.x, box.x + box.w):
                 self.matrix[i][j] = self.bkg
     def __setitem__(self, key: tuple[int, int], value: str):
         self.matrix[key[0]][key[1]] = value
-class GraphicBoundBox(BoundBox):
+class GraphicRect(Rect):
     def __init__(self, y: int, x: int, w: int, h: int, repr_char: str):
         self.old_y = y
         self.old_x = x
@@ -36,8 +36,8 @@ class GraphicBoundBox(BoundBox):
         self.y += y
         self.x += x
         self.needs_update = True
-    def plot(self, display: Display):
-        display.remove(BoundBox(
+    def draw(self, display: Display):
+        display.remove(Rect(
             self.old_y, self.old_x,
             self.w, self.h
         ))
