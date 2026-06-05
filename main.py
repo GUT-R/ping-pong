@@ -11,7 +11,7 @@ class Rect:
 
 def collision(r1: Rect, r2: Rect):
     return (
-        r1.x < r2.x - r2.w and
+        r1.x < r2.x + r2.w and
         r1.x + r1.w > r2.x and
         r1.y < r2.y + r2.h and
         r1.y + r1.h > r2.y
@@ -104,8 +104,8 @@ class Scene:
         )
     def __getitem__(self, key: str) -> GraphicRect:
         return self.rects[key]
-def main():
-    display = Display(100, 20, ['.', '#'])
+def test():
+    display = Display(30, 20, ['.', '#'])
     scene = Scene(display, [
         GraphicRect('Ball', 0, 0, 2, 2, 1, 1, 1)
     ], 24)
@@ -125,5 +125,6 @@ def main():
             scene['Ball'].speed_y *= -1
         scene['Ball'].move()
         scene.frame()
+
 if __name__ == '__main__':
-    main()
+    test()
