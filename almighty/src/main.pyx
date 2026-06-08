@@ -72,7 +72,7 @@ cdef class Display:
         self.matrix = [[background_char] * w] * h # Acabei aprendendo isso na prova de Minora (https://github.com/leonardo-minora)
         self._cleaned_positions = []
         self._drawed_positions = []
-    cdef clear(self, Rect rect):
+    cdef clear(self, rect: GraphicRect):
         self._cleaned_positions.clear()
         for i in range(rect.y, rect.y + rect.h):
             for j in range(rect.x, rect.x + rect.w):
@@ -94,10 +94,12 @@ cdef class Scene:
     fps: float
     def __init__(self, display: Display, rects: Iterable[GraphicRect], fps: float=24.0) -> None:
         self.display = display
-        self.rects = {rect.id: rect for rect in rects}
+        self.rects = {}
+        for rect in rects:
+            self.rects[rect.id] = rect
         self.fps = fps
     cpdef frame(self):
         for rect in self.rects.values():
-            self.display.clear(<Rect> rect)
+            self.display.clear(rect)
         for rect in self.rects.values():
             self.display.draw(rect)
