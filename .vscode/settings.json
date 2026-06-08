@@ -1,3 +1,4 @@
 {
+    "python.defaultInterpreterPath": "/home/augusto/p/ping-pong/.venv/bin/python",
     "python.analysis.typeCheckingMode": "strict"
 }

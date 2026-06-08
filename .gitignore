@@ -1,5 +1,5 @@
 __pycache__/
 .venv/
 build/
-cython/src/*.c
-cython/*.so
+almighty/src/*.c
+almighty/*.so
