@@ -1,6 +1,8 @@
 from typing import Iterable
 
 class GraphicRect:
+    id: str
+    repr: str
     x: int
     y: int
     w: int
