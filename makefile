@@ -1,6 +1,6 @@
 .PHONY: all venv dependencies cython
 
-OS := $(shell uname 2>dev/null || echo Windows)
+OS := $(shell uname 2>/dev/null || echo Windows)
 
 ifeq ($(OS), Windows)
     VENV_PYTHON := .venv\Scripts\python.exe
@@ -18,7 +18,7 @@ venv:
 	python3 -m venv .venv
 
 dependencies:
-	$(VENV_PIP) install -r requirements.txt
+	$(VENV_PIP) install -r dependencies.txt
 
 cython:
-	$(CD) almighty && $(VENV_PYTHON) setup.py build_ext --inplace
+	$(CD) almighty && ../$(VENV_PYTHON) setup.py build_ext --inplace
