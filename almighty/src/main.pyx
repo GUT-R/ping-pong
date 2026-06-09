@@ -1,6 +1,12 @@
 from libc.stdint cimport int_fast8_t # type: ignore
 from typing import Iterable
 
+cdef struct Rect:
+    int_fast8_t y
+    int_fast8_t w
+    int_fast8_t h
+    int_fast8_t x
+
 # cdef bool collision(Rect r1, Rect r2):
 #     return (
 #         r1.x < r2.x + r2.w and
