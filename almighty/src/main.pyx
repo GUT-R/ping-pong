@@ -59,26 +59,28 @@ cdef class GraphicRect:
         self.c_sum_pos(self.sx * x, self.sy * y)
 
 cdef class Display:
-    w: int
-    h: int
-    bkg: str
-    matrix: list[list[str]]
+    cdef public int w
+    cdef public int h
+    cdef public str bkg
+    cdef public list matrix # type: ignore
     _cleaned_positions: list[tuple[int, int]]
     _drawed_positions: list[tuple[int, int]]
     def __init__(self, w: int, h: int, background_char: str) -> None:
         self.w = w
         self.h = h
         self.bkg = background_char
-        self.matrix = [[background_char] * w] * h # Acabei aprendendo isso na prova de Minora (https://github.com/leonardo-minora)
+        self.matrix: list[list[str]] = [[background_char] * w] * h # Acabei aprendendo isso na prova de Minora (https://github.com/leonardo-minora)
         self._cleaned_positions = []
         self._drawed_positions = []
+    
     cdef clear(self, rect: GraphicRect):
         self._cleaned_positions.clear()
         for i in range(rect.y, rect.y + rect.h):
             for j in range(rect.x, rect.x + rect.w):
                 if self.matrix[i][j] != self.bkg:
-                    self.matrix[i][j] = self.bkg
+                    self.matrix[i][j] = self.bkg # type: ignore
                     self._cleaned_positions.append((i, j))
+    
     cdef draw(self, GraphicRect rect):
         self._drawed_positions.clear()
         for i in range(rect.y, rect.y + rect.h):
@@ -88,13 +90,14 @@ cdef class Display:
                     self._drawed_positions.append((i, j))
     cpdef str render(self):
         return '\n'.join(map(''.join, self.matrix))
+
 cdef class Scene:
-    display: Display
-    rects: dict[str, GraphicRect]
-    fps: float
+    cdef public Display display
+    cdef public dict rects # type: ignore
+    cdef public float fps
     def __init__(self, display: Display, rects: Iterable[GraphicRect], fps: float=24.0) -> None:
         self.display = display
-        self.rects = {}
+        self.rects: dict[str, GraphicRect] = {}
         for rect in rects:
             self.rects[rect.id] = rect
         self.fps = fps
