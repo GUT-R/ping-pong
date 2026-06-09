@@ -79,7 +79,7 @@ cdef class Display:
             for j in range(rect.x, rect.x + rect.w):
                 if self.matrix[i][j] != self.bkg:
                     self.matrix[i][j] = self.bkg # type: ignore
-                    self._cleaned_positions.append((i, j))
+                    self._cleaned_positions.append((j, i))
     
     cdef draw(self, GraphicRect rect):
         self._drawed_positions.clear()
@@ -87,7 +87,7 @@ cdef class Display:
             for j in range(rect.x, rect.x + rect.w):
                 if self.matrix[i][j] != rect.repr:
                     self.matrix[i][j] = rect.repr # type: ignore
-                    self._drawed_positions.append((i, j))
+                    self._drawed_positions.append((j, i))
     cpdef str render(self):
         return '\n'.join(map(''.join, self.matrix))
 
