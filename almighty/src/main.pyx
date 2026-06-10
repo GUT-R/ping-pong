@@ -1,4 +1,6 @@
 from libc.stdint cimport int_fast8_t # type: ignore
+from libc.stdio cimport sprintf      # type: ignore
+from libc.stdlib cimport malloc      # type: ignore
 from typing import Iterable
 
 cdef struct Rect:
@@ -6,6 +8,25 @@ cdef struct Rect:
     int_fast8_t w
     int_fast8_t h
     int_fast8_t x
+    
+cdef void f_cursor_pos(char* buf, int offset, int x, int y):
+    sprintf(buf + offset, "\033[%d;%dH",
+    y, x)  # type: ignore
+
+cdef char* f_cursor_positions(int[2]* positions, int count):
+    # Considerando que cada ANSI pode ter 13 no máximo caracteres de tamanho
+    # Se tiver mais, o código quebra.
+    cdef char* buf = <char*> malloc(<size_t> 0x0D * count)
+    cdef int offset = 0
+    cdef int i
+
+    for i in range(count):
+        f_cursor_pos(buf, offset, 
+        positions[i][0], positions[i][1] # type: ignore
+        )
+        offset += 0x0D
+
+    return buf
 
 # cdef bool collision(Rect r1, Rect r2):
 #     return (
@@ -14,6 +35,7 @@ cdef struct Rect:
 #         r1.y < r2.y + r2.h and
 #         r1.y + r1.h > r2.y
 #     )
+
 cdef class GraphicRect:
     cdef public str id
     cdef public str repr
