@@ -1,28 +1,31 @@
 from libc.stdint cimport int_fast8_t # type: ignore
 from libc.stdio cimport sprintf      # type: ignore
 from libc.stdlib cimport malloc      # type: ignore
+from libc.string cimport strlen      # type: ignore
 from typing import Iterable
-
 cdef struct Rect:
     int_fast8_t y
     int_fast8_t w
     int_fast8_t h
     int_fast8_t x
     
-cdef void f_cursor_pos(char* buf, int offset, int x, int y):
-    sprintf(buf + offset, "\033[%d;%dH",
-    y, x)  # type: ignore
+cdef void f_cursor_pos(char* buf, int offset, int x, int y, const char* s):
+    sprintf(buf + offset, "\033[%d;%dH%s",
+                                 y, x, s # type: ignore
+            ) 
 
-cdef char* f_cursor_positions(int[2]* positions, int count):
-    # Considerando que cada ANSI pode ter 13 no máximo caracteres de tamanho
+# p_iter_size: position iterable size
+cdef char* f_cursor_positions(int[2]* positions, size_t p_iter_size, const char* fill):
+    # Considerando que cada ANSI pode ter no máximo 13 caracteres de tamanho
     # Se tiver mais, o código quebra.
-    cdef char* buf = <char*> malloc(<size_t> 0x0D * count)
-    cdef int offset = 0
+    cdef const size_t fill_size = strlen(fill)
+    cdef char* buf = <char*> malloc((0x0D + fill_size) * p_iter_size)
+    cdef const int offset = 0
     cdef int i
 
-    for i in range(count):
+    for i in range(p_iter_size):
         f_cursor_pos(buf, offset, 
-        positions[i][0], positions[i][1] # type: ignore
+            positions[i][0], positions[i][1] # type: ignore
         )
         offset += 0x0D
 
