@@ -9,22 +9,25 @@ cdef struct Rect:
     int_fast8_t h
     int_fast8_t x
     
-cdef void f_cursor_pos(char* buf, int offset, int x, int y, const char* s) nogil:
+cdef void f_cursor_pos(char* buf, size_t offset, int x, int y, const char* s) nogil:
     sprintf(buf + offset, "\033[%d;%dH%s",
                                  y, x, s # type: ignore
             ) 
 
 # p_iter_size: position iterable size
 cdef char* f_cursor_positions(int[2]* positions, size_t p_iter_size, const char* fill) nogil:
-    # Considerando que cada ANSI pode ter no máximo 13 caracteres de tamanho
-    # Se tiver mais, o código quebra.
-    cdef const size_t fill_size = strlen(fill)
-    cdef char* buf = <char*> malloc((0x0D + fill_size) * p_iter_size)
+    # Considerando que cada ANSI pode ter no mínimo 12 caracteres de tamanho
+    # Por quê 12?
+    #   2      4     1  4     1*n  1
+    # [ \033[, 0000, ;, 0000, Sxx, H  ]
+    cdef const size_t fill_size = 12 * strlen(fill)
+    cdef char* buf = <char*> malloc(fill_size * p_iter_size)
     cdef int i
 
     for i in range(p_iter_size):
-        f_cursor_pos(buf, 13 * i,
-            positions[i][0], positions[i][1] # type: ignore
+        f_cursor_pos(buf, fill_size * i,
+            positions[i][0], positions[i][1], # type: ignore
+            fill
         )
 
     return buf
