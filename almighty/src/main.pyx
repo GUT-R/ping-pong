@@ -92,39 +92,39 @@ cdef class Display:
     cdef public list matrix # type: ignore
     cdef (int[2], char*)* _cleaned_positions
     cdef (int[2], char*)* _drawed_positions
+    cdef int cih = 0 # current Cleaned positions Index (hidden)
+    cdef int dih = 0 # current Drawed positions Index (hidden)
     def __init__(self, w: int, h: int, background_char: str) -> None:
         self.w = w
         self.h = h
         self.bkg = background_char
         self.ch_size = len(self.bkg)
         self.matrix: list[list[str]] = [[background_char] * w] * h # Acabei aprendendo isso na prova de Minora (https://github.com/leonardo-minora)
-        self.reset_buffer()
-    cdef reset_buffer(self):
         self._cleaned_positions = <(int[2]*, char*)*> malloc(<size_t> w * h * (sizeof(int) * 2 + sizeof(char) * self.ch_size))
         self._drawed_positions = <(int[2]*, char*)*> malloc(<size_t> w * h * (sizeof(int) * 2 + sizeof(char) * self.ch_size))
-    
+
+    cdef reset_buffer(self):
+        self.cih = 0
+        self.dih = 0
     cdef clear(self, rect: GraphicRect):
-        """WARNING: Reset buffer before runnning this."""
-        cdef int k = 0;
         for i in range(rect.y, rect.y + rect.h):
             for j in range(rect.x, rect.x + rect.w):
-                if self.matrix[i][j] != self.bkg:
-                    self.matrix[i][j] = self.bkg                                     # type: ignore
-                    self._cleaned_positions[k][0] = j                                # type: ignore
-                    self._cleaned_positions[k][1] = i                                # type: ignore
-                    self._cleaned_positions[k][2] = self.matrix[i][j][:self.ch_size] # type: ignore
-                    k += 1
+                if self.matrix[i][j] == rect.repr:
+                    self.matrix[i][j] = self.bkg                     # type: ignore
+                    self._cleaned_positions[self.cih][0] = j         # type: ignore
+                    self._cleaned_positions[self.cih][1] = i         # type: ignore
+                    self._cleaned_positions[self.cih][2] = self.bkg  # type: ignore
+                    self.cih += 1
     
     cdef draw(self, GraphicRect rect):
-        cdef int k = 0;
         for i in range(rect.y, rect.y + rect.h):
             for j in range(rect.x, rect.x + rect.w):
-                if self.matrix[i][j] != self.bkg:
-                    self.matrix[i][j] = self.bkg                                    # type: ignore
-                    self._drawed_positions[k][0] = j                                # type: ignore
-                    self._drawed_positions[k][1] = i                                # type: ignore
-                    self._drawed_positions[k][2] = self.matrix[i][j][:self.ch_size] # type: ignore
-                    k += 1
+                if self.matrix[i][j] != rect.repr:
+                    self.matrix[i][j] = self.bkg                    # type: ignore
+                    self._drawed_positions[self.dih][0] = j         # type: ignore
+                    self._drawed_positions[self.dih][1] = i         # type: ignore
+                    self._drawed_positions[self.dih][2] = rect.bkg  # type: ignore
+                    self.dih += 1
     cpdef str render(self):
         return '\n'.join(map(''.join, self.matrix))
 
