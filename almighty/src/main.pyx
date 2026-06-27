@@ -1,13 +1,13 @@
-from libc.stdint cimport int_fast8_t # type: ignore
-from libc.stdio cimport sprintf      # type: ignore
-from libc.stdlib cimport malloc      # type: ignore
-from libc.string cimport strlen      # type: ignore
+from libc.stdint cimport uint8_t, uint16_t # type: ignore
+from libc.stdio cimport sprintf            # type: ignore
+from libc.stdlib cimport malloc            # type: ignore
+from libc.string cimport strlen            # type: ignore
 from typing import Iterable
 cdef struct Rect:
-    int_fast8_t y
-    int_fast8_t w
-    int_fast8_t h
-    int_fast8_t x
+    uint16_t y
+    uint16_t x
+    uint8_t w
+    uint8_t h
     
 cdef void f_cursor_pos(char* buf, size_t offset, int x, int y, const char* s) nogil:
     sprintf(buf + offset, "\033[%d;%dH%s",
@@ -43,37 +43,52 @@ cdef char* f_cursor_positions(int[2]* positions, size_t p_iter_size, const char*
 cdef class GraphicRect:
     cdef public str id
     cdef public str repr
-    cdef public int x
-    cdef public int y
-    cdef public int w
-    cdef public int h
-    cdef public int sx
-    cdef public int sy
-    cdef Rect old_self
+    cdef public uint16_t x
+    cdef public uint16_t y
+    cdef public uint8_t w
+    cdef public uint8_t h
+    cdef public uint8_t sx
+    cdef public uint8_t sy
+    cdef Rect old
     def __init__(self, ID: str, representating_char: str, *args: int, **kwargs: int) -> None:
         self.id = ID
-        
-        defaults = (0, 0, 1, 1, 1, 1)
-        values = (*args, *defaults[len(args):])
-
-        self.x, self.y, self.w, self.h, self.sx, self.sy = values[:6]
-        
-        self.x = kwargs.get('x', self.x)
-        self.y = kwargs.get('y', self.y)
-        self.w = kwargs.get('w', self.w)
-        self.h = kwargs.get('h', self.h)
-        self.sx = kwargs.get('sx', self.sx)
-        self.sy = kwargs.get('sy', self.sy)
-        self.old_self.x = <int_fast8_t> self.x
-        self.old_self.y = <int_fast8_t> self.y
         self.repr = representating_char
-    cdef void c_set_pos(self, int x = 0, int y = 0):
-        self.old_self.x = <int_fast8_t> self.x
-        self.old_self.y = <int_fast8_t> self.y
-        self.y = y
-        self.x = x
+        
+        x, y, w, h, sx, sy = 0, 0, 1, 1, 1, 1
+        n = len(args)
+        
+        if n == 5 and not kwargs.get('y'):
+            raise TypeError("GraphicRect() missing 1 required positional argument: 'y'")
+        
+        if n >= 1:
+            w = h = args[0]
+        if n >= 2:
+            sx = sy = args[-1]
+        if n >= 3:
+            h = args[1]
+        if n >= 4:
+            sx, sy = args[-2:][:2]
+        if n >= 6:
+            x, y, w, h, sx, sy = args[:6]
+        
+        self.x = <uint16_t> kwargs.get('x', x)
+        self.y = <uint16_t> kwargs.get('y', y)
+        self.w = <uint8_t> kwargs.get('w', w)
+        self.h = <uint8_t> kwargs.get('h', h)
+        self.sx = <uint8_t> kwargs.get('sx', sx)
+        self.sx = <uint8_t> kwargs.get('sy', sy)
+        self.old.x = self.x
+        self.old.y = self.y
+        self.old.w = self.w
+        self.old.h = self.h
+        
+    cdef void c_set_pos(self, int x = 0, int y = 0): # type: ignore
+        self.old.x = self.x
+        self.old.y = self.y
+        self.y = <uint16_t> y
+        self.x = <uint16_t> x
     cdef void c_sum_pos(self, int x = 0, int y = 0):
-        self.c_set_pos(self.x + x, self.y + y)
+        self.c_set_pos(<int> self.x + x, <int> self.y + y)
     
     cpdef set_pos(self, x: int=0, y: int=0):
         self.c_set_pos(x, y)
@@ -82,7 +97,7 @@ cdef class GraphicRect:
         self.c_sum_pos(x, y)
     
     cpdef move(self, int x = 1, int y = 1):
-        self.c_sum_pos(self.sx * x, self.sy * y)
+        self.c_sum_pos(<int> self.sx * x, <int> self.sy * y)
 
 cdef class Display:
     cdef public int w
@@ -94,6 +109,7 @@ cdef class Display:
     cdef (int[2], char*)* _drawed_positions
     cdef int cih = 0 # current Cleaned positions Index (hidden)
     cdef int dih = 0 # current Drawed positions Index (hidden)
+    cdef char* buffer
     def __init__(self, w: int, h: int, background_char: str) -> None:
         self.w = w
         self.h = h
@@ -107,15 +123,18 @@ cdef class Display:
         self.cih = 0
         self.dih = 0
     cdef clear(self, rect: GraphicRect):
-        for i in range(rect.y, rect.y + rect.h):
-            for j in range(rect.x, rect.x + rect.w):
+        for i in range(rect.old.y, rect.old.y + rect.old.h):
+            for j in range(rect.old.x, rect.old.x + rect.old.w):
                 if self.matrix[i][j] == rect.repr:
                     self.matrix[i][j] = self.bkg                     # type: ignore
                     self._cleaned_positions[self.cih][0] = j         # type: ignore
                     self._cleaned_positions[self.cih][1] = i         # type: ignore
                     self._cleaned_positions[self.cih][2] = self.bkg  # type: ignore
                     self.cih += 1
-    
+    cdef clear_all(self, rects: Iterable[GraphicRect]):
+        for rect in rects:
+            self.clear(rect)
+        
     cdef draw(self, GraphicRect rect):
         for i in range(rect.y, rect.y + rect.h):
             for j in range(rect.x, rect.x + rect.w):
