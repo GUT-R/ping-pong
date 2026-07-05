@@ -31,6 +31,13 @@ class GraphicRect:
     @overload
     def __init__(
         self, ID: str, representating_char: str,
+        x: int=0, y: int=0,
+        w: int=1, h: int=1,
+        _speed: int=1
+    ) -> None: ...
+    @overload
+    def __init__(
+        self, ID: str, representating_char: str,
         x: int=0, y: int=0, 
         w: int=1, h: int=1, 
         sx:int=1, sy:int=1
@@ -61,6 +68,10 @@ class GraphicRect:
         x: int = 1,
         y: int = 1
     ) -> None: ...
+    def set_color(
+        self,
+        new_color: int
+    ) -> None: ...
 
 
 class Display:
@@ -68,7 +79,6 @@ class Display:
     h: int
     bkg: str
     bkg_size: int
-    matrix: list[list[str]]
 
     def __init__(
         self,
