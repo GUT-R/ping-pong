@@ -1,7 +1,6 @@
 from libc.stdint cimport uint8_t, uint16_t # type: ignore
-from libc.stdio cimport sprintf            # type: ignore
+from libc.stdio cimport sprintf, printf    # type: ignore
 from libc.stdlib cimport malloc, free      # type: ignore
-from libc.string cimport strcat            # type: ignore
 from typing import Iterable
 
 cdef struct Rect:
@@ -51,12 +50,14 @@ cdef bool collision(Rect r1, Rect r2):
         r1.y < r2.y + r2.h and
         r1.y + r1.h > r2.y
     )
+cdef bool intersection(Rect r, int x, int y) nogil:
+    return r.y <= y <= r.y + r.h and r.x <= x <= r.y + r.w
 
 cdef class GraphicRect:
     cdef public str id
-    cdef public Rect ne
     cdef public uint8_t sx
     cdef public uint8_t sy
+    cdef Rect ne
     cdef Rect old
     def __init__(self, ID: str, color: int, *args: int, **kwargs: int) -> None:
         self.id = ID
@@ -103,13 +104,12 @@ cdef class Display:
     cdef public int w
     cdef public int h
     cdef public str bkg
+    cdef public uint8_t color
     cdef Pixel* _cleaned_pixels
     cdef Pixel* _drawed_pixels
     cdef int cih = 0 # current Cleaned positions Index (hidden)
     cdef int dih = 0 # current Drawed positions Index (hidden)
-    cdef int* _dp_index_mapper # DP: Drawed Positions
     
-    cdef char* buffer
     def __init__(self, w: int, h: int, background_color: uint8_t) -> None:
         self.w = w
         self.h = h
@@ -120,7 +120,7 @@ cdef class Display:
         cdef int i, j
         for i in range(rect.old.y, rect.old.y + rect.old.h):
             for j in range(rect.old.x, rect.old.x + rect.old.w):
-                if rect.old.y <= i <= rect.old.h and rect.old.x <= j <= rect.old.w:
+                if intersection(rect.ne, j, i):
                     continue
                 self._cleaned_pixels[self.cih].x = <uint16_t> i   # type: ignore
                 self._cleaned_pixels[self.cih].y = <uint16_t> j   # type: ignore
@@ -133,11 +133,11 @@ cdef class Display:
         cdef int i, j
         for i in range(rect.ne.y, rect.ne.y + rect.ne.h):
             for j in range(rect.ne.x, rect.ne.x + rect.ne.w):
-                if rect.old.y <= i <= rect.old.h and rect.old.x <= j <= rect.old.w or self.out_vision(i, j) or not different_colors:
-                    pass
-                self._drawed_pixels[self.dih].x = <uint16_t> i # type: ignore
-                self._drawed_pixels[self.dih].y = <uint16_t> j # type: ignore
-                self._drawed_pixels[self.dih].color = color    # type: ignore
+                if intersection(rect.old, j, i) or self.out_vision(i, j) or not different_colors:
+                    continue
+                self._drawed_pixels[self.dih].x = <uint16_t> i  # type: ignore
+                self._drawed_pixels[self.dih].y = <uint16_t> j  # type: ignore
+                self._drawed_pixels[self.dih].color = new_color # type: ignore
                 self.dih += 1
     cdef bool out_vision(self, int x, int y) nogil:
         return (
@@ -147,21 +147,38 @@ cdef class Display:
     cdef update_on_buffer(self, GraphicRect rect) nogil:
         self.clear_on_buffer(rect)
         self.draw_on_buffer(rect)
-    cpdef update_all(self, rects: Iterable[GraphicRect]):
+    cpdef reset_buffer(self):
         self.cih = 0
         self.dih = 0
+    cpdef update_all(self, rects: Iterable[GraphicRect]):
         for rect in rects:
             self.update_on_buffer(rect)
+    cpdef print_buffer(self):
+        cdef char* clear_buffer = f_pixels(self._cleaned_pixels, <size_t> self.cih)
+        cdef char* draw_buffer = f_pixels(self._drawed_pixels, <size_t> self.dih)
+        printf(b"%s%s", clear_buffer, draw_buffer) # type: ignore
+        free(<void*> clear_buffer)
+        free(<void*> draw_buffer)
 
 cdef class Scene:
     cdef public Display display
-    cdef public dict rects # type: ignore
+    cdef public Iterable[GraphicRect] rects # type: ignore
     cdef public float fps
     def __init__(self, display: Display, rects: Iterable[GraphicRect], fps: float=24.0) -> None:
         self.display = display
-        self.rects: dict[str, GraphicRect] = {}
-        for rect in rects:
-            self.rects[rect.id] = rect
+        self.rects = rects
         self.fps = fps
-    cpdef frame(self):
-        ...
+    cpdef print_scene(self):
+        otp = [
+            [(<bytes> f_color(self.display.color)).decode('utf-8') for _ in range(self.display.w)]
+                for _ in range(self.display.h)
+        ]
+        for rect in self.rects:
+            for i in range(rect.ne.y, rect.ne.y + rect.ne.h):
+                for j in range(rect.ne.x, rect.ne.x + rect.ne.w):
+                    otp[i][j] = (<bytes> f_color(rect.ne.color)).decode('utf-8')
+        print('\n'.join(map(''.join, otp)))
+    cpdef print_buffer(self):
+        self.display.reset_buffer()
+        self.display.update_all(self.rects)
+        self.display.print_buffer()
