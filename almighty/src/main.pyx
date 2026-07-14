@@ -14,6 +14,10 @@ cdef struct c_Rect:
 cdef struct c_TemporalRect:
     c_Rect old
     c_Rect new
+cdef struct c_Pixel:
+    uint16_t y
+    uint16_t x
+    uint8_t color
 
 cdef size_t color_size = sizeof(b"\033[48;2;2;8;8m  ") - 1 # type: ignore
 cdef size_t pixel_size = color_size + sizeof(b"\033[65535;65535H") - 1 # type: ignore
@@ -25,21 +29,21 @@ cdef size_t f_color(char* buf, uint8_t color) nogil:
         ((color >> 5) & 0x07) * 36  # type: ignore
     )
 
-cdef size_t f_rect(char* buf, size_t offset, c_Rect rect) nogil:
-    cdef size_t new_offset = sprintf(buf + offset, b"\033[%d;%dH", rect.y, rect.x) # type: ignore
-    new_offset += f_color(buf + offset + new_offset, rect.color)
+cdef size_t f_pixel(char* buf, size_t offset, c_Pixel pixel) nogil:
+    cdef size_t new_offset = sprintf(buf + offset, b"\033[%d;%dH", pixel.y, pixel.x) # type: ignore
+    new_offset += f_color(buf + offset + new_offset, pixel.color)
     return new_offset
 
 # p_iter_size: position iterable size
-cdef char* f_rects(const c_Rect** rects, size_t lenght) nogil:
+cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) nogil:
     cdef size_t total_size = pixel_size * lenght
     cdef char* buf = <char*> malloc(sizeof(char) * total_size)
     cdef size_t offset
     cdef int i
 
     for i in range(lenght):
-        offset += f_rect(buf, offset, 
-            *(rects[i]) # type: ignore
+        offset += f_pixel(buf, offset, 
+            pixels[i] # type: ignore
         )
 
     return buf
@@ -104,8 +108,8 @@ cdef class Display:
     cdef public int w
     cdef public int h
     cdef public uint8_t color
-    cdef c_Rect** _cleaned_pixels
-    cdef c_Rect** _drawed_pixels
+    cdef c_Pixel* _cleaned_pixels
+    cdef c_Pixel* _drawed_pixels
     cdef int cih # current Cleaned positions Index (hidden)
     cdef int dih # current Drawed positions Index (hidden)
     
@@ -113,8 +117,8 @@ cdef class Display:
         self.w = w
         self.h = h
         self.color = background_color
-        self._cleaned_pixels = <c_Rect**> malloc(<size_t> sizeof(c_Rect*) * w * h)
-        self._drawed_pixels = <c_Rect**> malloc(<size_t> sizeof(c_Rect*) * w * h)
+        self._cleaned_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
+        self._drawed_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self.reset_buffer()
     
     cdef void clear_on_buffer(self, c_TemporalRect* rect) nogil:
@@ -123,7 +127,9 @@ cdef class Display:
             for j in range(rect.old.x, rect.old.x + rect.old.w):
                 if intersection(rect.new, j, i):
                     continue
-                self._cleaned_pixels[self.cih] = &rect.old # type: ignore
+                self._cleaned_pixels[self.cih].y = i              # type: ignore
+                self._cleaned_pixels[self.cih].x = j              # type: ignore
+                self._cleaned_pixels[self.cih].color = self.color # type: ignore
                 self.cih += 1
     cdef void draw_on_buffer(self, c_TemporalRect* rect) nogil:
         cdef uint8_t old_color = rect.old.color
@@ -134,7 +140,9 @@ cdef class Display:
             for j in range(rect.new.x, rect.new.x + rect.new.w):
                 if intersection(rect.old, j, i) or self.out_vision(j, i) or same_colors:
                     continue
-                self._drawed_pixels[self.dih] = &rect.new  # type: ignore
+                self._drawed_pixels[self.dih].y = i             # type: ignore
+                self._drawed_pixels[self.dih].x = j             # type: ignore
+                self._drawed_pixels[self.dih].color = new_color # type: ignore
                 self.dih += 1
     cdef bint out_vision(self, int x, int y) nogil:
         return <bint> (
@@ -151,8 +159,8 @@ cdef class Display:
         for rect in rects:
             self.update_on_buffer(rect.data)
     cpdef print_buffer(self):
-        cdef char* clear_buffer = f_rects(self._cleaned_pixels, <size_t> self.cih)
-        cdef char* draw_buffer = f_rects(self._drawed_pixels, <size_t> self.dih)
+        cdef char* clear_buffer = f_pixels(self._cleaned_pixels, <size_t> self.cih)
+        cdef char* draw_buffer = f_pixels(self._drawed_pixels, <size_t> self.dih)
         printf(b"%s%s", clear_buffer, draw_buffer) # type: ignore
         free(<void*> clear_buffer)
         free(<void*> draw_buffer)
