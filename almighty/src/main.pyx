@@ -15,10 +15,10 @@ cdef struct c_TemporalRect:
     c_Rect old
     c_Rect new
 
-cdef const size_t color_size = strlen(<char*> b"\033[48;2;2;8;8m  ")
-cdef const size_t pixel_size = color_size + strlen(<char*> b"\033[65535;65535H")
+cdef size_t color_size = sizeof(b"\033[48;2;2;8;8m  ") - 1 # type: ignore
+cdef size_t pixel_size = color_size + sizeof(b"\033[65535;65535H") - 1 # type: ignore
 
-cdef size_t f_color(char* buf, uint8_t color):
+cdef size_t f_color(char* buf, uint8_t color) nogil:
     return sprintf(buf, b"\033[48;2;%d;%d;%dm  ",
         ((color >> 0) & 0x03) * 80, # type: ignore
         ((color >> 2) & 0x07) * 36, # type: ignore
@@ -31,28 +31,28 @@ cdef size_t f_rect(char* buf, size_t offset, c_Rect rect) nogil:
     return new_offset
 
 # p_iter_size: position iterable size
-cdef char* f_rects(Rect* rects, size_t lenght) nogil:
-    cdef const size_t total_size = pixel_size * lenght
+cdef char* f_rects(const c_Rect** rects, size_t lenght) nogil:
+    cdef size_t total_size = pixel_size * lenght
     cdef char* buf = <char*> malloc(sizeof(char) * total_size)
     cdef size_t offset
     cdef int i
 
-    for i in range(total_size):
+    for i in range(lenght):
         offset += f_rect(buf, offset, 
-            rects[i] # type: ignore
+            *(rects[i]) # type: ignore
         )
 
     return buf
 
-cdef bool collision(c_Rect r1, c_Rect r2):
-    return (
+cdef bint collision(c_Rect r1, c_Rect r2) nogil:
+    return <bint> (
         r1.x < r2.x + r2.w and
         r1.x + r1.w > r2.x and
         r1.y < r2.y + r2.h and
         r1.y + r1.h > r2.y
     )
-cdef bool intersection(c_Rect r, int x, int y) nogil:
-    return r.y <= y <= r.y + r.h and r.x <= x <= r.y + r.w
+cdef bint intersection(c_Rect r, int x, int y) nogil:
+    return <bint> (r.y <= y <= (r.y + r.h) and r.x <= x <= (r.y + r.w))
 
 cdef class Rect:
     cdef public str id
@@ -104,19 +104,20 @@ cdef class Display:
     cdef public int w
     cdef public int h
     cdef public uint8_t color
-    cdef Rect** _cleaned_pixels
-    cdef Rect** _drawed_pixels
-    cdef int cih = 0 # current Cleaned positions Index (hidden)
-    cdef int dih = 0 # current Drawed positions Index (hidden)
+    cdef c_Rect** _cleaned_pixels
+    cdef c_Rect** _drawed_pixels
+    cdef int cih # current Cleaned positions Index (hidden)
+    cdef int dih # current Drawed positions Index (hidden)
     
     def __init__(self, w: int, h: int, background_color: uint8_t) -> None:
         self.w = w
         self.h = h
         self.color = background_color
-        self._cleaned_pixels = <Rect**> malloc(<size_t> sizeof(Rect*) * w * h)
-        self._drawed_pixels = <Rect**> malloc(<size_t> sizeof(Rect*) * w * h)
+        self._cleaned_pixels = <c_Rect**> malloc(<size_t> sizeof(c_Rect*) * w * h)
+        self._drawed_pixels = <c_Rect**> malloc(<size_t> sizeof(c_Rect*) * w * h)
+        self.reset_buffer()
     
-    cdef clear_on_buffer(self, c_TemporalRect rect) nogil:
+    cdef void clear_on_buffer(self, c_TemporalRect* rect) nogil:
         cdef int i, j
         for i in range(rect.old.y, rect.old.y + rect.old.h):
             for j in range(rect.old.x, rect.old.x + rect.old.w):
@@ -124,23 +125,23 @@ cdef class Display:
                     continue
                 self._cleaned_pixels[self.cih] = &rect.old # type: ignore
                 self.cih += 1
-    cdef draw_on_buffer(self, c_TemporalRect rect) nogil:
+    cdef void draw_on_buffer(self, c_TemporalRect* rect) nogil:
         cdef uint8_t old_color = rect.old.color
         cdef uint8_t new_color = rect.new.color
-        cdef bool different_colors = old_color != new_color
+        cdef bint same_colors = old_color == new_color # type: ignore
         cdef int i, j
         for i in range(rect.new.y, rect.new.y + rect.new.h):
             for j in range(rect.new.x, rect.new.x + rect.new.w):
-                if intersection(rect.old, j, i) or self.out_vision(i, j) or not different_colors:
+                if intersection(rect.old, j, i) or self.out_vision(j, i) or same_colors:
                     continue
                 self._drawed_pixels[self.dih] = &rect.new  # type: ignore
                 self.dih += 1
-    cdef bool out_vision(self, int x, int y) nogil:
-        return (
+    cdef bint out_vision(self, int x, int y) nogil:
+        return <bint> (
             x < 0 or y < 0 or
             x >= self.w or y >= self.h
         )
-    cdef update_on_buffer(self, c_TemporalRect rect) nogil:
+    cdef void update_on_buffer(self, c_TemporalRect rect) nogil:
         self.clear_on_buffer(rect)
         self.draw_on_buffer(rect)
     cpdef reset_buffer(self):
@@ -157,17 +158,17 @@ cdef class Display:
         free(<void*> draw_buffer)
     cdef char* f_screen(self):
         cdef char* ptr = <char*> malloc(color_size * self.w * self.h + self.h)
-        cdef size_t i
+        cdef size_t i = <size_t> 0
         for _ in range(self.w * self.h):
             i += f_color(ptr + i, self.color)
         return ptr
 cdef class Scene:
     cdef public Display display
-    cdef public Iterable[Rect] rects # type: ignore
+    cdef public list rects # type: ignore
     cdef public float fps
     def __init__(self, display: Display, rects: Iterable[Rect], fps: float=24.0) -> None:
         self.display = display
-        self.rects = rects
+        self.rects: list[Rect] = rects # type: ignore
         self.fps = fps
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()
