@@ -166,9 +166,9 @@ cdef class Scene:
     cdef public Display display
     cdef public list rects # type: ignore
     cdef public float fps
-    def __init__(self, display: Display, rects: Iterable[Rect], fps: float=24.0) -> None:
+    def __init__(self, display: Display, rects: list[Rect], fps: float=24.0) -> None:
         self.display = display
-        self.rects: list[Rect] = rects # type: ignore
+        self.rects: list[Rect] = rects
         self.fps = fps
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()

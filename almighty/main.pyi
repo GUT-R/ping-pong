@@ -84,7 +84,7 @@ class Display:
         self,
         w: int,
         h: int,
-        background_char: str
+        background_color: int
     ) -> None: ...
 
     def reset_buffer(self) -> None:
@@ -99,7 +99,7 @@ class Scene:
     display: Display
     rects: list[Rect]
     fps: float
-    def __init__(self, display: Display, rects: Iterable[Rect], fps: float=24.0) -> None: ...
+    def __init__(self, display: Display, rects: list[Rect], fps: float=24.0) -> None: ...
     def print_scene(self) -> None:
         """Imprime a cena inteira"""
     def print_buffer(self) -> None:
