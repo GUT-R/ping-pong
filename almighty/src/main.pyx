@@ -1,7 +1,6 @@
 from libc.stdint cimport uint8_t, uint16_t # type: ignore
 from libc.stdio cimport sprintf, printf    # type: ignore
 from libc.stdlib cimport malloc, free      # type: ignore
-from libc.string cimport strlen            # type: ignore
 from typing import Iterable
 
 cdef struct c_Rect:
@@ -35,21 +34,21 @@ cdef size_t f_pixel(char* buf, size_t offset, c_Pixel pixel) nogil:
     return new_offset
 
 # p_iter_size: position iterable size
-cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) nogil:
+cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) noexcept nogil:
     cdef size_t total_size = pixel_size * lenght
     cdef char* buf = <char*> malloc(sizeof(char) * total_size)
-    cdef size_t offset
+    cdef size_t offset = <size_t> 0
     cdef int i
 
-    for i in range(lenght):
+    for i in range(<int> lenght):
         offset += f_pixel(buf, offset, 
             pixels[i] # type: ignore
         )
 
     return buf
 
-cdef bint collision(c_Rect r1, c_Rect r2) nogil:
-    return <bint> (
+cpdef bool collision(c_Rect r1, c_Rect r2):
+    return (
         r1.x < r2.x + r2.w and
         r1.x + r1.w > r2.x and
         r1.y < r2.y + r2.h and
@@ -121,7 +120,7 @@ cdef class Display:
         self._drawed_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self.reset_buffer()
     
-    cdef void clear_on_buffer(self, c_TemporalRect rect) nogil:
+    cdef void clear_on_buffer(self, c_TemporalRect rect) noexcept nogil:
         cdef int i, j
         for i in range(rect.old.y, rect.old.y + rect.old.h):
             for j in range(rect.old.x, rect.old.x + rect.old.w):
@@ -131,7 +130,7 @@ cdef class Display:
                 self._cleaned_pixels[self.cih].x = j              # type: ignore
                 self._cleaned_pixels[self.cih].color = self.color # type: ignore
                 self.cih += 1
-    cdef void draw_on_buffer(self, c_TemporalRect rect) nogil:
+    cdef void draw_on_buffer(self, c_TemporalRect rect) noexcept nogil:
         cdef uint8_t old_color = rect.old.color
         cdef uint8_t new_color = rect.new.color
         cdef bint same_colors = old_color == new_color # type: ignore
@@ -144,7 +143,7 @@ cdef class Display:
                 self._drawed_pixels[self.dih].x = j             # type: ignore
                 self._drawed_pixels[self.dih].color = new_color # type: ignore
                 self.dih += 1
-    cdef bint out_vision(self, int x, int y) nogil:
+    cdef bint out_vision(self, int x, int y) noexcept nogil:
         return <bint> (
             x < 0 or y < 0 or
             x >= self.w or y >= self.h
@@ -183,7 +182,7 @@ cdef class Scene:
         for rect in self.rects:
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
-                    f_color(screen + (i * self.display.h + j), self.display.color)
+                    f_color(screen + (i * (self.display.h + 1) + j), self.display.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
