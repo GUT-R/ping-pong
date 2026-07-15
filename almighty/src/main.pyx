@@ -47,13 +47,6 @@ cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) noexcept nogil:
 
     return buf
 
-cpdef bool collision(c_Rect r1, c_Rect r2):
-    return (
-        r1.x < r2.x + r2.w and
-        r1.x + r1.w > r2.x and
-        r1.y < r2.y + r2.h and
-        r1.y + r1.h > r2.y
-    )
 cdef bint intersection(c_Rect r, int x, int y) nogil:
     return <bint> (r.y <= y <= (r.y + r.h) and r.x <= x <= (r.y + r.w))
 

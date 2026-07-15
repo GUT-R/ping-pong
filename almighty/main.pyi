@@ -1,6 +1,7 @@
 from typing import Iterable, overload
 
-class GraphicRect:
+class Rect:
+    """Representa um retângulo com posição, tamanho e um código cor entre 0 e 255."""
     id: str
     sx: int
     sy: int
@@ -50,30 +51,34 @@ class GraphicRect:
         self,
         x: int = 1,
         y: int = 1
-    ) -> None: ...
+    ) -> None:
+        """Define uma nova posição e armazena a anterior"""
     
     def sum_pos(
         self,
-        x: int = 1,
-        y: int = 1
-    ) -> None: ...
+        x: int = 0,
+        y: int = 0
+    ) -> None:
+        """Soma `x` e `y` às posições e armazena a anteior"""
     
     def move(
         self,
         x: int = 1,
         y: int = 1
-    ) -> None: ...
+    ) -> None:
+        """Adiciona `x` e `y` multiplicados pela velocidade nas posições e armazena a anterior"""
     def set_color(
         self,
         new_color: int
-    ) -> None: ...
+    ) -> None:
+        """Define um código de cor entre 0 e 255 ao rect. (e também armazena o anterior)"""
 
 
 class Display:
+    """Representa a tela."""
     w: int
     h: int
-    bkg: str
-    bkg_size: int
+    color: int
 
     def __init__(
         self,
@@ -82,16 +87,20 @@ class Display:
         background_char: str
     ) -> None: ...
 
-    def reset_buffer(self) -> None: ...
-    def update_all(self, rects: Iterable[GraphicRect]) -> None: ...
-    def print_buffer(self) -> None: ...
+    def reset_buffer(self) -> None:
+        """Limpa o buffer. (display esquece onde colocar pixels)"""
+    def update_all(self, rects: Iterable[Rect]) -> None:
+        """Armazena somente os pixels atualizados em cada `Rect`"""
+    def print_buffer(self) -> None:
+        """Imprime os pixels armazenados"""
 
 class Scene:
+    """Representa uma cena com objetos 2D"""
     display: Display
-    rects: Iterable[GraphicRect]
+    rects: list[Rect]
     fps: float
-    def __init__(self, display: Display, rects: Iterable[GraphicRect], fps: float=24.0) -> None: ...
+    def __init__(self, display: Display, rects: Iterable[Rect], fps: float=24.0) -> None: ...
     def print_scene(self) -> None:
         """Imprime a cena inteira"""
     def print_buffer(self) -> None:
-        """Imprime somente os pixels modificados"""
+        """Imprime somente os pixels atualizados"""
