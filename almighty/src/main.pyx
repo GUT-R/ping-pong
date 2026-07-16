@@ -20,6 +20,8 @@ cdef struct c_Pixel:
 
 cdef size_t color_size = sizeof(b"\033[48;2;2;8;8m  ") - 1 # type: ignore
 cdef size_t pixel_size = color_size + sizeof(b"\033[65535;65535H") - 1 # type: ignore
+cdef char break_line = <char> b'\n'
+cdef char end_string = <char> b'\0'
 
 cdef size_t f_color(char* buf, uint8_t color) nogil:
     return sprintf(buf, b"\033[48;2;%d;%d;%dm  ",
@@ -44,6 +46,7 @@ cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) noexcept nogil:
         offset += f_pixel(buf, offset, 
             pixels[i] # type: ignore
         )
+    buf[offset] = end_string # type: ignore
 
     return buf
 
@@ -159,8 +162,12 @@ cdef class Display:
     cdef char* f_screen(self):
         cdef char* ptr = <char*> malloc(color_size * self.w * self.h + self.h)
         cdef size_t i = <size_t> 0
-        for _ in range(self.w * self.h):
+        # WARNING: ESSE CÓDIGO GULOSO NÃO FOI DEBUADO. É aqui onde suas suspeitas devem se concentrar.
+        for _ in range(self.w * self.h + self.h):
+            if <int> i % self.h == 0:
+                ptr[i] = break_line # type: ignore
             i += f_color(ptr + i, self.color)
+        ptr[i] = end_string # type: ignore
         return ptr
 cdef class Scene:
     cdef public Display display
@@ -171,11 +178,16 @@ cdef class Scene:
         self.rects: list[Rect] = rects
         self.fps = fps
     cpdef print_scene(self):
+        if not len(self.rects): return
+        if not hasattr(self.rects[0], 'data'): return # <- Por algum motivo não tô conseguindo acessar o data
+
         cdef char* screen = self.display.f_screen()
+        cdef int i, j
         for rect in self.rects:
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
-                    f_color(screen + (i * (self.display.h + 1) + j), self.display.color)
+                    if not self.display.out_vision(j, i):
+                        f_color(screen + (i * (self.display.h + 1) + j), self.display.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
