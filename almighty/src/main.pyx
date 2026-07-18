@@ -18,20 +18,21 @@ cdef struct c_Pixel:
     uint16_t x
     uint8_t color
 
-cdef size_t color_size = sizeof(b"\033[48;2;2;8;8m  ") - 1 # type: ignore
+cdef size_t color_size = sizeof(b"\033[48;2;255;255;255m  ") - 1 # type: ignore
 cdef size_t pixel_size = color_size + sizeof(b"\033[65535;65535H") - 1 # type: ignore
+
 cdef char break_line = <char> b'\n'
 cdef char end_string = <char> b'\0'
 
 cdef size_t f_color(char* buf, uint8_t color) nogil:
-    return sprintf(buf, b"\033[48;2;%d;%d;%dm  ",
+    return sprintf(buf, b"\033[48;2;%03d;%03d;%03dm  ",
         ((color >> 0) & 0x03) * 80, # type: ignore
         ((color >> 2) & 0x07) * 36, # type: ignore
         ((color >> 5) & 0x07) * 36  # type: ignore
     )
 
 cdef size_t f_pixel(char* buf, size_t offset, c_Pixel pixel) nogil:
-    cdef size_t new_offset = sprintf(buf + offset, b"\033[%d;%dH", pixel.y, pixel.x) # type: ignore
+    cdef size_t new_offset = sprintf(buf + offset, b"\033[%05d;%05dH", pixel.y, pixel.x) # type: ignore
     new_offset += f_color(buf + offset + new_offset, pixel.color)
     return new_offset
 
@@ -151,6 +152,7 @@ cdef class Display:
         self.cih = 0
         self.dih = 0
     cpdef update_all(self, rects: Iterable[Rect]):
+        cdef Rect rect
         for rect in rects:
             self.update_on_buffer(rect.data)
     cpdef print_buffer(self):
@@ -162,11 +164,12 @@ cdef class Display:
     cdef char* f_screen(self):
         cdef char* ptr = <char*> malloc(color_size * self.w * self.h + self.h)
         cdef size_t i = <size_t> 0
-        # WARNING: ESSE CÓDIGO GULOSO NÃO FOI DEBUADO. É aqui onde suas suspeitas devem se concentrar.
-        for _ in range(self.w * self.h + self.h):
-            if <int> i % self.h == 0:
-                ptr[i] = break_line # type: ignore
-            i += f_color(ptr + i, self.color)
+        
+        for _ in range(self.h):
+            for _ in range(0, self.w + 1, color_size):
+                i += f_color(ptr + i, self.color)
+            ptr[i] = break_line # type: ignore
+            i += 1
         ptr[i] = end_string # type: ignore
         return ptr
 cdef class Scene:
@@ -178,16 +181,14 @@ cdef class Scene:
         self.rects: list[Rect] = rects
         self.fps = fps
     cpdef print_scene(self):
-        if not len(self.rects): return
-        if not hasattr(self.rects[0], 'data'): return # <- Por algum motivo não tô conseguindo acessar o data
-
         cdef char* screen = self.display.f_screen()
         cdef int i, j
+        cdef Rect rect
         for rect in self.rects:
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
                     if not self.display.out_vision(j, i):
-                        f_color(screen + (i * (self.display.h + 1) + j), self.display.color)
+                        f_color(screen + j * (self.display.w + 1) + i, self.display.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
