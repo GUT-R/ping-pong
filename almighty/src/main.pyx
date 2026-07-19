@@ -1,6 +1,7 @@
 from libc.stdint cimport uint8_t, uint16_t # type: ignore
 from libc.stdio cimport sprintf, printf    # type: ignore
 from libc.stdlib cimport malloc, free      # type: ignore
+from libc.string cimport strlen            # type: ignore
 from typing import Iterable
 
 cdef struct c_Rect:
@@ -190,13 +191,13 @@ cdef class Scene:
         self.fps = fps
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()
-        # cdef int i, j
-        # cdef Rect rect
-        # for rect in self.rects:
-        #     for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
-        #         for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
-        #             if not self.display.out_vision(j, i):
-        #                 f_color(screen + j * (self.display.w + 1) + i, self.display.color)
+        cdef int i, j
+        cdef Rect rect
+        for rect in self.rects:
+            for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
+                for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
+                    if not self.display.out_vision(j, i):
+                        f_color(screen + j * (self.display.w + 1) + i * color_size, rect.data.new.color)
         printf(b"%s\n", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
