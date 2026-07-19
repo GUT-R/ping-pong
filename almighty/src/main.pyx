@@ -25,6 +25,14 @@ cdef char break_line = <char> b'\n'
 cdef char end_string = <char> b'\0'
 
 cdef size_t f_color(char* buf, uint8_t color) nogil:
+    """Formata um código de cor de 0 à 255 com base em posicionamento de bits.
+    
+    Exemplo:
+    >>> cor = 0b10_101_100
+    >>> b = ((cor >> 2) & 0x07) * 36 # 0b10
+    >>> g = ((cor >> 2) & 0x07) * 36 # 0b101
+    >>> r = ((cor >> 0) & 0x03) * 80 # 0b100
+    """
     return sprintf(buf, b"\033[48;2;%03d;%03d;%03dm  ",
         ((color >> 0) & 0x03) * 80, # type: ignore
         ((color >> 2) & 0x07) * 36, # type: ignore
@@ -166,7 +174,7 @@ cdef class Display:
         cdef size_t i = <size_t> 0
         
         for _ in range(self.h):
-            for _ in range(0, self.w + 1, color_size):
+            for _ in range(0, self.w, color_size):
                 i += f_color(ptr + i, self.color)
             ptr[i] = break_line # type: ignore
             i += 1
@@ -182,14 +190,14 @@ cdef class Scene:
         self.fps = fps
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()
-        cdef int i, j
-        cdef Rect rect
-        for rect in self.rects:
-            for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
-                for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
-                    if not self.display.out_vision(j, i):
-                        f_color(screen + j * (self.display.w + 1) + i, self.display.color)
-        printf(b"%s", screen) # type: ignore
+        # cdef int i, j
+        # cdef Rect rect
+        # for rect in self.rects:
+        #     for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
+        #         for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
+        #             if not self.display.out_vision(j, i):
+        #                 f_color(screen + j * (self.display.w + 1) + i, self.display.color)
+        printf(b"%s\n", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
         self.display.reset_buffer()
