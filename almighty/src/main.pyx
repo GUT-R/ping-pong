@@ -19,10 +19,11 @@ cdef struct c_Pixel:
     uint16_t x
     uint8_t color
 
-cdef size_t color_size = sizeof(b"\033[48;2;255;255;255m  ") - 1 # type: ignore
-cdef size_t pixel_size = color_size + sizeof(b"\033[65535;65535H") - 1 # type: ignore
+cdef size_t color_size = <size_t> len("\033[48;2;255;255;255m  ")
+cdef size_t pixel_size = color_size + len("\033[65535;65535H")
 
-cdef char break_line = <char> b'\n'
+cdef char* reset_and_break = <char*> b'\033[0m\n'
+cdef size_t reset_and_break_size = strlen(reset_and_break)
 cdef char end_string = <char> b'\0'
 
 cdef size_t f_color(char* buf, uint8_t color) nogil:
@@ -61,7 +62,7 @@ cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) noexcept nogil:
     return buf
 
 cdef bint intersection(c_Rect r, int x, int y) nogil:
-    return <bint> (r.y <= y <= (r.y + r.h) and r.x <= x <= (r.y + r.w))
+    return <bint> (r.y <= y < (r.y + r.h) and r.x <= x < (r.x + r.w))
 
 cdef class Rect:
     cdef public str id
@@ -91,7 +92,7 @@ cdef class Rect:
         self.data.old.h = self.data.new.h = <uint8_t> kwargs.get('h', h)
         self.data.old.color = self.data.new.color = <uint8_t> color
         self.sx = <uint8_t> kwargs.get('sx', sx)
-        self.sx = <uint8_t> kwargs.get('sy', sy)
+        self.sy = <uint8_t> kwargs.get('sy', sy)
 
 
     cpdef set_pos(self, int x=0, int y=0):
@@ -171,14 +172,13 @@ cdef class Display:
         free(<void*> clear_buffer)
         free(<void*> draw_buffer)
     cdef char* f_screen(self):
-        cdef char* ptr = <char*> malloc(color_size * self.w * self.h + self.h)
+        cdef char* ptr = <char*> malloc(color_size * self.w * self.h + (reset_and_break_size * self.h) + 1)
         cdef size_t i = <size_t> 0
         
         for _ in range(self.h):
-            for _ in range(0, self.w, color_size):
+            for _ in range(self.w):
                 i += f_color(ptr + i, self.color)
-            ptr[i] = break_line # type: ignore
-            i += 1
+            i += sprintf(ptr + i, reset_and_break)
         ptr[i] = end_string # type: ignore
         return ptr
 cdef class Scene:
@@ -197,8 +197,8 @@ cdef class Scene:
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
                     if not self.display.out_vision(j, i):
-                        f_color(screen + j * (self.display.w + 1) + i * color_size, rect.data.new.color)
-        printf(b"%s\n", screen) # type: ignore
+                        f_color(screen + j * (self.display.w + reset_and_break_size) + i * color_size, rect.data.new.color)
+        printf(b"%s", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
         self.display.reset_buffer()
