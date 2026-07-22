@@ -1,7 +1,12 @@
 from typing import Iterable, overload
 
 class Rect:
-    """Representa um retângulo com posição, tamanho e um código cor entre 0 e 255."""
+    """Representa um retângulo com posição, tamanho e um código cor entre 0 e 255.
+    
+    Limitações:
+    - `sx` e `sy` possuem um limite de 0 à 255
+    - O objeto não pode estar numa posição menor que 0 e maior que 65535
+    """
     id: str
     sx: int
     sy: int
@@ -75,7 +80,12 @@ class Rect:
 
 
 class Display:
-    """Representa a tela."""
+    """Representa a tela.
+    
+    Limitações:
+    - `w` e `h` devem estar entre 0 e 65535
+    - `background_color` deve estar entre 0 e 255
+    """
     w: int
     h: int
     color: int
@@ -84,7 +94,8 @@ class Display:
         self,
         w: int,
         h: int,
-        background_color: int
+        background_color: int,
+        colors: list[tuple[int, int, int]]
     ) -> None: ...
 
     def reset_buffer(self) -> None:
@@ -98,8 +109,7 @@ class Scene:
     """Representa uma cena com objetos 2D"""
     display: Display
     rects: list[Rect]
-    fps: float
-    def __init__(self, display: Display, rects: list[Rect], fps: float=24.0) -> None: ...
+    def __init__(self, display: Display, rects: list[Rect]) -> None: ...
     def print_scene(self) -> None:
         """Imprime a cena inteira"""
     def print_buffer(self) -> None:
