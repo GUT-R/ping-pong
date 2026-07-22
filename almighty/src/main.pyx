@@ -214,7 +214,8 @@ cdef class Display:
             for _ in range(self.w):
                 self.f_color(ptr + i, self.color)
                 i += color_size
-            i += <size_t> sprintf(ptr + i, reset_and_break)
+            memcpy(ptr + i, reset_and_break, reset_and_break_size) # type: ignore
+            i += reset_and_break_size
         ptr[i] = end_string # type: ignore
         return ptr
     cdef close(self):
@@ -237,7 +238,7 @@ cdef class Scene:
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
                     if not self.display.out_vision(j, i):
-                        self.display.f_color(screen + j * (self.display.w + reset_and_break_size) + i * color_size, rect.data.new.color)
+                        self.display.f_color(screen + i * (color_size * self.display.w + reset_and_break_size) + j * color_size, rect.data.new.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):

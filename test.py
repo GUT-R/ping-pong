@@ -1,4 +1,5 @@
 from almighty.main import Rect, Display, Scene
+
 def _(hex_color: str) -> tuple[int, int, int]:
     hex_color = hex_color.lstrip('#')
     if len(hex_color) != 6:
@@ -10,8 +11,10 @@ display = Display(4, 3, 0, [
     _("#FF0000"),
 ])
 
+w, h, y, x = [int(i) for i in input('[w, h, y, x]=').split()]
+
 scene = Scene(display, [
-    Rect('Bola', color=1, w=1, h=1, y=1, x=0)
+    Rect('Bola', 1, w=w, h=h, y=y, x=x)
 ])
 
 scene.print_scene()
