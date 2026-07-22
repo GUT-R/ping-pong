@@ -84,7 +84,8 @@ class Display:
         self,
         w: int,
         h: int,
-        background_color: int
+        background_color: int,
+        colors: list[tuple[int, int, int]]
     ) -> None: ...
 
     def reset_buffer(self) -> None:

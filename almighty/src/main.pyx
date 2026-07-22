@@ -101,8 +101,9 @@ cdef class Rect:
     cpdef sum_pos(self, int x=0, int y=0):
         self.set_pos(<int> self.data.new.x + x, <int> self.data.new.y + y)
     
-    cpdef move(self, int x = 1, int y = 1):
+    cpdef move(self, int x=0, int y=0):
         self.sum_pos(<int> self.sx * x, <int> self.sy * y)
+    
     cpdef set_color(self, uint8_t new_color):
         self.data.old.color = self.data.new.color
         self.data.new.color = new_color
@@ -213,7 +214,7 @@ cdef class Display:
             for _ in range(self.w):
                 self.f_color(ptr + i, self.color)
                 i += color_size
-            i += sprintf(ptr + i, reset_and_break)
+            i += <size_t> sprintf(ptr + i, reset_and_break)
         ptr[i] = end_string # type: ignore
         return ptr
     cdef close(self):
