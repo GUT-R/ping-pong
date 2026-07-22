@@ -1,7 +1,7 @@
 from libc.stdint cimport uint8_t, uint16_t # type: ignore
 from libc.stdio cimport sprintf, printf    # type: ignore
 from libc.stdlib cimport malloc, free      # type: ignore
-from libc.string cimport strlen            # type: ignore
+from libc.string cimport strlen, memcpy    # type: ignore
 from typing import Iterable
 
 cdef struct c_Rect:
@@ -26,40 +26,14 @@ cdef char* reset_and_break = <char*> b'\033[0m\n'
 cdef size_t reset_and_break_size = strlen(reset_and_break)
 cdef char end_string = <char> b'\0'
 
-cdef size_t f_color(char* buf, uint8_t color) nogil:
-    """Formata um código de cor de 0 à 255 com base em posicionamento de bits.
-    
-    Exemplo:
-    >>> cor = 0b10_101_100
-    >>> b = ((cor >> 2) & 0x07) * 36 # 0b10
-    >>> g = ((cor >> 2) & 0x07) * 36 # 0b101
-    >>> r = ((cor >> 0) & 0x03) * 80 # 0b100
-    """
-    return sprintf(buf, b"\033[48;2;%03d;%03d;%03dm  ",
-        ((color >> 0) & 0x03) * 80, # type: ignore
-        ((color >> 2) & 0x07) * 36, # type: ignore
-        ((color >> 5) & 0x07) * 36  # type: ignore
-    )
 
-cdef size_t f_pixel(char* buf, size_t offset, c_Pixel pixel) nogil:
-    cdef size_t new_offset = sprintf(buf + offset, b"\033[%05d;%05dH", pixel.y, pixel.x) # type: ignore
-    new_offset += f_color(buf + offset + new_offset, pixel.color)
-    return new_offset
-
-# p_iter_size: position iterable size
-cdef char* f_pixels(const c_Pixel* pixels, size_t lenght) noexcept nogil:
-    cdef size_t total_size = pixel_size * lenght
-    cdef char* buf = <char*> malloc(sizeof(char) * total_size)
-    cdef size_t offset = <size_t> 0
-    cdef int i
-
-    for i in range(<int> lenght):
-        offset += f_pixel(buf, offset, 
-            pixels[i] # type: ignore
-        )
-    buf[offset] = end_string # type: ignore
-
-    return buf
+cpdef alloc_pallete(pallete: list[tuple[uint8_t, uint8_t, uint8_t]]):
+    cdef char[21]* result = <char[21]*> malloc(<size_t> (21 * len(pallete)))
+    cdef int i = 0
+    cdef tuple rgb # type: ignore
+    for rgb in pallete:
+        i += sprintf(result + i, b"\033[48;2;%03d;%03d;%03dm  ", *rgb) # type: ignore
+    return result
 
 cdef bint intersection(c_Rect r, int x, int y) nogil:
     return <bint> (r.y <= y < (r.y + r.h) and r.x <= x < (r.x + r.w))
@@ -113,19 +87,21 @@ cdef class Rect:
 cdef class Display:
     cdef public int w
     cdef public int h
+    cdef char[21]* pallete # 21 == color_size
     cdef public uint8_t color
     cdef c_Pixel* _cleaned_pixels
     cdef c_Pixel* _drawed_pixels
     cdef int cih # current Cleaned positions Index (hidden)
     cdef int dih # current Drawed positions Index (hidden)
     
-    def __init__(self, w: int, h: int, background_color: uint8_t) -> None:
+    def __init__(self, w: int, h: int, background_color: uint8_t, colors: list[tuple[uint8_t, uint8_t, uint8_t]]) -> None:
         self.w = w
         self.h = h
         self.color = background_color
         self._cleaned_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self._drawed_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self.reset_buffer()
+        self.pallete = alloc_pallete(colors)
     
     cdef void clear_on_buffer(self, c_TemporalRect rect) noexcept nogil:
         cdef int i, j
@@ -137,6 +113,7 @@ cdef class Display:
                 self._cleaned_pixels[self.cih].x = j              # type: ignore
                 self._cleaned_pixels[self.cih].color = self.color # type: ignore
                 self.cih += 1
+    
     cdef void draw_on_buffer(self, c_TemporalRect rect) noexcept nogil:
         cdef uint8_t old_color = rect.old.color
         cdef uint8_t new_color = rect.new.color
@@ -150,24 +127,52 @@ cdef class Display:
                 self._drawed_pixels[self.dih].x = j             # type: ignore
                 self._drawed_pixels[self.dih].color = new_color # type: ignore
                 self.dih += 1
+    
     cdef bint out_vision(self, int x, int y) noexcept nogil:
         return <bint> (
             x < 0 or y < 0 or
             x >= self.w or y >= self.h
         )
+    
     cdef void update_on_buffer(self, c_TemporalRect rect) nogil:
         self.clear_on_buffer(rect)
         self.draw_on_buffer(rect)
+    
     cpdef reset_buffer(self):
         self.cih = 0
         self.dih = 0
+    
     cpdef update_all(self, rects: Iterable[Rect]):
         cdef Rect rect
         for rect in rects:
             self.update_on_buffer(rect.data)
+    
+    cdef void f_color(self, char* buf, color_index: uint8_t) noexcept nogil:
+        memcpy(buf, self.pallete[color_index], color_size) # type: ignore
+    
+    cdef size_t f_pixel(self, char* buf, size_t offset, c_Pixel pixel) nogil:
+        cdef size_t new_offset = sprintf(buf + offset, b"\033[%05d;%05dH", pixel.y, pixel.x) # type: ignore
+        self.f_color(buf + offset + new_offset, pixel.color)
+        return new_offset + color_size
+        
+    cdef char* f_pixels(self, const c_Pixel* pixels, size_t lenght) noexcept nogil:
+        cdef size_t total_size = pixel_size * lenght
+        cdef char* buf = <char*> malloc(sizeof(char) * total_size)
+        cdef size_t offset = <size_t> 0
+        cdef int i
+
+        for i in range(<int> lenght):
+            self.f_pixel(buf, offset, 
+                pixels[i] # type: ignore
+            )
+            offset += color_size
+        buf[offset] = end_string # type: ignore
+
+        return buf
+        
     cpdef print_buffer(self):
-        cdef char* clear_buffer = f_pixels(self._cleaned_pixels, <size_t> self.cih)
-        cdef char* draw_buffer = f_pixels(self._drawed_pixels, <size_t> self.dih)
+        cdef char* clear_buffer = self.f_pixels(self._cleaned_pixels, <size_t> self.cih)
+        cdef char* draw_buffer = self.f_pixels(self._drawed_pixels, <size_t> self.dih)
         printf(b"%s%s", clear_buffer, draw_buffer) # type: ignore
         free(<void*> clear_buffer)
         free(<void*> draw_buffer)
@@ -177,7 +182,8 @@ cdef class Display:
         
         for _ in range(self.h):
             for _ in range(self.w):
-                i += f_color(ptr + i, self.color)
+                self.f_color(ptr + i, self.color)
+                i += color_size
             i += sprintf(ptr + i, reset_and_break)
         ptr[i] = end_string # type: ignore
         return ptr
@@ -197,7 +203,7 @@ cdef class Scene:
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
                     if not self.display.out_vision(j, i):
-                        f_color(screen + j * (self.display.w + reset_and_break_size) + i * color_size, rect.data.new.color)
+                        self.display.f_color(screen + j * (self.display.w + reset_and_break_size) + i * color_size, rect.data.new.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)
     cpdef print_buffer(self):
