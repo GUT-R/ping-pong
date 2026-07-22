@@ -6,9 +6,9 @@ def _(hex_color: str) -> tuple[int, int, int]:
         raise ValueError('Formato inválido')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4)) # type: ignore
 
-display = Display(4, 3, 0, [
-    _("#00FFC3"),
-    _("#FF0000"),
+display = Display(50, 20, 0, [
+    _("#3F625A"),
+    _("#C5E4C0"),
 ])
 
 w, h, y, x = [int(i) for i in input('[w, h, y, x]=').split()]

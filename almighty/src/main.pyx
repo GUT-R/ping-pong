@@ -1,8 +1,9 @@
-from libc.stdint cimport uint8_t, uint16_t # type: ignore
-from libc.stdio cimport sprintf, printf    # type: ignore
-from libc.stdlib cimport malloc, free      # type: ignore
-from libc.string cimport strlen, memcpy    # type: ignore
-from typing import Iterable
+from libc.stdio cimport sprintf, printf # type: ignore
+from libc.stdlib cimport malloc, free   # type: ignore
+from libc.string cimport strlen, memcpy # type: ignore
+from libc.stdint cimport (              # type: ignore
+    uint8_t, uint16_t, uint32_t
+)
 
 cdef struct c_Rect:
     uint16_t y
@@ -109,18 +110,18 @@ cdef class Rect:
         self.data.new.color = new_color
 
 cdef class Display:
-    cdef public int w
-    cdef public int h
+    cdef public uint16_t w
+    cdef public uint16_t h
     cdef public uint8_t color
     cdef char[21]* _pallete # 21 == color_size
     cdef c_Pixel* _cleaned_pixels
     cdef c_Pixel* _drawed_pixels
-    cdef int cih # current Cleaned positions Index (hidden)
-    cdef int dih # current Drawed positions Index (hidden)
+    cdef uint32_t cih # current Cleaned positions Index (hidden)
+    cdef uint32_t dih # current Drawed positions Index (hidden)
     
     def __init__(self, w: int, h: int, background_color: uint8_t, colors: list[tuple[uint8_t, uint8_t, uint8_t]]) -> None:
-        self.w = w
-        self.h = h
+        self.w = <uint16_t> w
+        self.h = <uint16_t> h
         self.color = background_color
         self._cleaned_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self._drawed_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
@@ -172,7 +173,7 @@ cdef class Display:
         self.cih = 0
         self.dih = 0
     
-    cpdef update_all(self, rects: Iterable[Rect]):
+    cpdef update_all(self, rects: list[Rect]):
         cdef Rect rect
         for rect in rects:
             self.update_on_buffer(rect.data)
@@ -225,11 +226,9 @@ cdef class Display:
 cdef class Scene:
     cdef public Display display
     cdef public list rects # type: ignore
-    cdef public float fps
-    def __init__(self, display: Display, rects: list[Rect], fps: float=24.0) -> None:
+    def __init__(self, display: Display, rects: list[Rect]) -> None:
         self.display = display
         self.rects: list[Rect] = rects
-        self.fps = fps
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()
         cdef int i, j
