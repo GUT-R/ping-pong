@@ -14,10 +14,16 @@ cdef struct c_Rect:
 cdef struct c_TemporalRect:
     c_Rect old
     c_Rect new
+
 cdef struct c_Pixel:
     uint16_t y
     uint16_t x
     uint8_t color
+
+cdef struct c_Color:
+    uint8_t r
+    uint8_t g
+    uint8_t b
 
 cdef size_t color_size = <size_t> len("\033[48;2;255;255;255m  ")
 cdef size_t pixel_size = color_size + len("\033[65535;65535H")
@@ -26,13 +32,30 @@ cdef char* reset_and_break = <char*> b'\033[0m\n'
 cdef size_t reset_and_break_size = strlen(reset_and_break)
 cdef char end_string = <char> b'\0'
 
+cdef c_Color* color_table2struct(pallete: list[tuple[uint8_t, uint8_t, uint8_t]]):
+    """Converte uma lista de tuplas com três naturais em uma Array C de structs `c_ExtendedColor`"""
+    cdef int n = len(pallete)
+    cdef c_Color* buf = <c_Color*> malloc(<size_t> n * sizeof(c_Color))
 
-cpdef alloc_pallete(pallete: list[tuple[uint8_t, uint8_t, uint8_t]]):
-    cdef char[21]* result = <char[21]*> malloc(<size_t> (21 * len(pallete)))
+    if not buf:
+        raise MemoryError()
+
+    cdef int i
+    for i in range(n):
+        buf[i].r = pallete[i][0] # type: ignore
+        buf[i].g = pallete[i][1] # type: ignore
+        buf[i].b = pallete[i][2] # type: ignore
+
+    return buf
+
+cdef char[21]* alloc_pallete(c_Color* pallete, int lenght) nogil:
+    cdef char[21]* result = <char[21]*> malloc(<size_t> (21 * lenght + 1))
     cdef int i = 0
-    cdef tuple rgb # type: ignore
-    for rgb in pallete:
-        i += sprintf(result + i, b"\033[48;2;%03d;%03d;%03dm  ", *rgb) # type: ignore
+    cdef c_Color color
+    cdef const char* template = b"\033[48;2;%03d;%03d;%03dm  " # type: ignore
+    for i in range(lenght):
+        color = pallete[i] # type: ignore
+        sprintf(result[i], template, color.r, color.g, color.b) # type: ignore
     return result
 
 cdef bint intersection(c_Rect r, int x, int y) nogil:
@@ -87,8 +110,8 @@ cdef class Rect:
 cdef class Display:
     cdef public int w
     cdef public int h
-    cdef char[21]* pallete # 21 == color_size
     cdef public uint8_t color
+    cdef char[21]* _pallete # 21 == color_size
     cdef c_Pixel* _cleaned_pixels
     cdef c_Pixel* _drawed_pixels
     cdef int cih # current Cleaned positions Index (hidden)
@@ -101,7 +124,13 @@ cdef class Display:
         self._cleaned_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self._drawed_pixels = <c_Pixel*> malloc(<size_t> sizeof(c_Pixel) * w * h)
         self.reset_buffer()
-        self.pallete = alloc_pallete(colors)
+        self.register_color_pallete(colors)
+    
+    cdef register_color_pallete(self, colors: list[tuple[uint8_t, uint8_t, uint8_t]]):
+        cdef int lenght = len(colors)
+        cdef c_Color* temp = color_table2struct(colors)
+        self._pallete = alloc_pallete(temp, lenght)
+        free(<void*> temp) 
     
     cdef void clear_on_buffer(self, c_TemporalRect rect) noexcept nogil:
         cdef int i, j
@@ -148,9 +177,9 @@ cdef class Display:
             self.update_on_buffer(rect.data)
     
     cdef void f_color(self, char* buf, color_index: uint8_t) noexcept nogil:
-        memcpy(buf, self.pallete[color_index], color_size) # type: ignore
+        memcpy(buf, self._pallete[color_index], color_size) # type: ignore
     
-    cdef size_t f_pixel(self, char* buf, size_t offset, c_Pixel pixel) nogil:
+    cdef size_t f_pixel(self, char* buf, size_t offset, c_Pixel pixel) noexcept nogil:
         cdef size_t new_offset = sprintf(buf + offset, b"\033[%05d;%05dH", pixel.y, pixel.x) # type: ignore
         self.f_color(buf + offset + new_offset, pixel.color)
         return new_offset + color_size
@@ -187,6 +216,10 @@ cdef class Display:
             i += sprintf(ptr + i, reset_and_break)
         ptr[i] = end_string # type: ignore
         return ptr
+    cdef close(self):
+        free(<void*> self._cleaned_pixels)
+        free(<void*> self._drawed_pixels)
+        free(<void*> self._pallete)
 cdef class Scene:
     cdef public Display display
     cdef public list rects # type: ignore
