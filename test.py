@@ -1,20 +1,22 @@
-from almighty.main import Rect, Display, Scene
+from almighty.main import Display, Rect, Scene
+from time import sleep
+from utils import clear, hexstring_to_tuple as _
 
-def _(hex_color: str) -> tuple[int, int, int]:
-    hex_color = hex_color.lstrip('#')
-    if len(hex_color) != 6:
-        raise ValueError('Formato inválido')
-    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4)) # type: ignore
-
-display = Display(50, 20, 0, [
-    _("#3F625A"),
-    _("#C5E4C0"),
+display = Display(20, 20, background_color=0, colors=[
+    _("#99D6A3"), # display background
+    _("#8ECC4C"), # rect1
+    _("#54B249"), # rect2
 ])
 
-w, h, y, x = [int(i) for i in input('[w, h, y, x]=').split()]
+# Rect(id, cor, x, y, largura, altura, velocidade)
+rect1 = Rect('A', 1, 0, 0, 3, 2, 1)
+rect2 = Rect('B', 2, 2, 2, 4, 1, 1)
+scene = Scene(display, [rect1, rect2])
 
-scene = Scene(display, [
-    Rect('Bola', 1, w=w, h=h, y=y, x=x)
-])
+def main():
+    clear()
+    scene.print_scene()
+    sleep(3)
 
-scene.print_scene()
+if __name__ == '__main__':
+    main()

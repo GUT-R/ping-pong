@@ -68,8 +68,8 @@ class Rect:
 
     def move(
         self,
-        x: int = 1,
-        y: int = 1
+        x: int = 0,
+        y: int = 0
     ) -> None:
         """Desloca o retângulo pelos valores `x` e `y` multiplicados pela velocidade atual."""
 

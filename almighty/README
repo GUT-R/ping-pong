@@ -1,0 +1,50 @@
+# The Almighty
+
+Uma biblioteca em Cython para renderização de retângulos coloridos no terminal usando escape codes ANSI.
+
+## O que é
+
+`The Almighty` oferece classes de alto desempenho construídas em Cython para desenhar retângulos e gerenciar uma cena em uma tela de terminal. O projeto usa estruturas C para representar cores, pixels e retângulos, além de buffers para renderização eficiente.
+
+## Principais componentes
+
+- `Rect` — representa um retângulo com posição, tamanho, cor e capacidade de movimentação.
+- `Display` — gerencia uma tela virtual, paleta de cores e buffers de limpeza/desenho.
+- `Scene` — organiza retângulos e pinta a cena no terminal.
+
+## Requisitos
+
+- Python 3.x
+- Cython
+- Um compilador C compatível com o sistema Linux ou Windows
+
+## Instalação
+
+```cmd
+make all
+```
+
+## Uso básico
+
+Após compilar, importe os componentes e utilize-os para criar e renderizar uma cena:
+
+```python
+from almighty.main import Display, Rect, Scene
+
+display = Display(67 // 2, 67, background_color=0, colors=[(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255)])
+# Rect(id, cor, x, y, largura, altura, velocidade)
+rect1 = Rect('A', 1, 0, 0, 3, 2, 1)
+rect2 = Rect('B', 2, 2, 2, 1, 3, 1)
+scene = Scene(display, [rect1, rect2])
+scene.print_scene()
+```
+
+## Estrutura do projeto
+
+- `almighty/setup.py` — script de compilação com `setuptools` e `Cython`
+- `almighty/src/main.pyx` — código-fonte principal em Cython
+- `almighty/build/` — diretório de build gerado após compilação
+
+## Observações
+
+O projeto é voltado para demonstrações de renderização de terminal e manipulação de telas com performance aprimorada por Cython.
