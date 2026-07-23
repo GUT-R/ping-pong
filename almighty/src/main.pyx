@@ -4,6 +4,8 @@ from libc.string cimport strlen, memcpy # type: ignore
 from libc.stdint cimport (              # type: ignore
     uint8_t, uint16_t, uint32_t
 )
+from typing import Iterable
+
 
 cdef struct c_Rect:
     uint16_t y
@@ -173,7 +175,7 @@ cdef class Display:
         self.cih = 0
         self.dih = 0
     
-    cpdef update_all(self, rects: list[Rect]):
+    cpdef update_all(self, rects: Iterable[Rect]):
         cdef Rect rect
         for rect in rects:
             self.update_on_buffer(rect.data)
@@ -225,22 +227,32 @@ cdef class Display:
         free(<void*> self._pallete)
 cdef class Scene:
     cdef public Display display
-    cdef public list rects # type: ignore
+    cdef public dict rects # type: ignore
     def __init__(self, display: Display, rects: list[Rect]) -> None:
         self.display = display
-        self.rects: list[Rect] = rects
+        self.rects: dict[str, Rect] = {}
+        for rect in rects:
+            self.rects[rect.id] = rect
+
+    def __getitem__(self, key: str):
+        return self.rects[key]
+    
+    def __getattr__(self, __name: str) -> Rect:
+        return self.rects[__name.lstrip('_')] # pega tudo depois do "_"
+    
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()
         cdef int i, j
         cdef Rect rect
-        for rect in self.rects:
+        for rect in self.rects.values():
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
                     if not self.display.out_vision(j, i):
                         self.display.f_color(screen + i * (color_size * self.display.w + reset_and_break_size) + j * color_size, rect.data.new.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)
+    
     cpdef print_buffer(self):
         self.display.reset_buffer()
-        self.display.update_all(self.rects)
+        self.display.update_all(self.rects.values())
         self.display.print_buffer()
