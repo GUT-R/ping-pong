@@ -65,13 +65,10 @@ cdef bint intersection(c_Rect r, int x, int y) nogil:
     return <bint> (r.y <= y < (r.y + r.h) and r.x <= x < (r.x + r.w))
 
 cdef class Rect:
-    cdef public str id
     cdef public uint8_t sx
     cdef public uint8_t sy
     cdef c_TemporalRect data
-    def __init__(self, ID: str, color: int, *args: int, **kwargs: int) -> None:
-        self.id = ID
-        
+    def __init__(self, color: int, *args: int, **kwargs: int) -> None:
         x, y, w, h, sx, sy = 0, 0, 1, 1, 1, 1
         n = len(args)
         
@@ -228,17 +225,15 @@ cdef class Display:
 cdef class Scene:
     cdef public Display display
     cdef public dict rects # type: ignore
-    def __init__(self, display: Display, rects: list[Rect]) -> None:
+    def __init__(self, display: Display, rects: dict[str, Rect]) -> None:
         self.display = display
-        self.rects: dict[str, Rect] = {}
-        for rect in rects:
-            self.rects[rect.id] = rect
+        self.rects: dict[str, Rect] = rects
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Rect:
         return self.rects[key]
     
     def __getattr__(self, __name: str) -> Rect:
-        return self.rects[__name.lstrip('_')] # pega tudo depois do "_"
+        return self.rects[__name]
     
     cpdef print_scene(self):
         cdef char* screen = self.display.f_screen()

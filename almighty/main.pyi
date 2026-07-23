@@ -7,38 +7,37 @@ class Rect:
     - `sx` e `sy` ficam entre 0 e 255
     - as coordenadas permanecem entre 0 e 65535
     """
-    id: str
     sx: int
     sy: int
     
     @overload
     def __init__(
-        self, ID: str, color: int,
+        self, color: int,
         _scale: int=1,
         _speed: int=1,
     ) -> None: ...
     @overload
     def __init__(
-        self, ID: str, color: int,
+        self, color: int,
         w: int=1, h: int=1,
         _speed: int=1,
     ) -> None: ...
     @overload
     def __init__(
-        self, ID: str, color: int,
+        self, color: int,
         w: int=1, h: int=1,
         sx: int=1, sy: int=1,
     ) -> None: ...
     @overload
     def __init__(
-        self, ID: str, color: int,
+        self, color: int,
         x: int=0, y: int=0,
         w: int=1, h: int=1,
         _speed: int=1
     ) -> None: ...
     @overload
     def __init__(
-        self, ID: str, color: int,
+        self, color: int,
         x: int=0, y: int=0, 
         w: int=1, h: int=1, 
         sx:int=1, sy:int=1
@@ -112,7 +111,7 @@ class Scene:
     """Representa uma cena 2D composta por uma tela e um conjunto de retângulos."""
     display: Display
     rects: dict[str, Rect]
-    def __init__(self, display: Display, rects: list[Rect]) -> None: ...
+    def __init__(self, display: Display, rects: dict[str, Rect]) -> None: ...
     def __getitem__(self, key: str) -> Rect: ...
     def __getattr__(self, __name: str) -> Rect: ...
     def print_scene(self) -> None:
