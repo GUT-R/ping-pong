@@ -1,11 +1,11 @@
 from typing import Iterable, overload
 
 class Rect:
-    """Representa um retângulo com posição, tamanho e um código cor entre 0 e 255.
-    
+    """Representa um retângulo 2D com posição, tamanho, cor e velocidade.
+
     Limitações:
-    - `sx` e `sy` possuem um limite de 0 à 255
-    - O objeto não pode estar numa posição menor que 0 e maior que 65535
+    - `sx` e `sy` ficam entre 0 e 255
+    - as coordenadas permanecem entre 0 e 65535
     """
     id: str
     sx: int
@@ -57,31 +57,32 @@ class Rect:
         x: int = 1,
         y: int = 1
     ) -> None:
-        """Define uma nova posição e armazena a anterior"""
-    
+        """Move o retângulo para a posição absoluta especificada e salva a posição anterior."""
+
     def sum_pos(
         self,
         x: int = 0,
         y: int = 0
     ) -> None:
-        """Soma `x` e `y` às posições e armazena a anteior"""
-    
+        """Ajusta a posição do retângulo somando os valores `x` e `y`, preservando a posição anterior."""
+
     def move(
         self,
         x: int = 1,
         y: int = 1
     ) -> None:
-        """Adiciona `x` e `y` multiplicados pela velocidade nas posições e armazena a anterior"""
+        """Desloca o retângulo pelos valores `x` e `y` multiplicados pela velocidade atual."""
+
     def set_color(
         self,
         new_color: int
     ) -> None:
-        """Define um código de cor entre 0 e 255 ao rect. (e também armazena o anterior)"""
+        """Atualiza o código de cor do retângulo para um valor entre 0 e 255 e guarda a cor anterior."""
 
 
 class Display:
-    """Representa a tela.
-    
+    """Representa a tela de renderização, incluindo dimensões e paleta de cores.
+
     Limitações:
     - `w` e `h` devem estar entre 0 e 65535
     - `background_color` deve estar entre 0 e 255
@@ -99,18 +100,20 @@ class Display:
     ) -> None: ...
 
     def reset_buffer(self) -> None:
-        """Limpa o buffer. (display esquece onde colocar pixels)"""
+        """Limpa o buffer interno para preparar a próxima renderização."""
+
     def update_all(self, rects: Iterable[Rect]) -> None:
-        """Armazena somente os pixels atualizados em cada `Rect`"""
+        """Atualiza o buffer apenas com os pixels alterados pelos retângulos fornecidos."""
+
     def print_buffer(self) -> None:
-        """Imprime os pixels armazenados"""
+        """Imprime o buffer atual de pixels na saída de renderização."""
 
 class Scene:
-    """Representa uma cena com objetos 2D"""
+    """Representa uma cena 2D composta por uma tela e um conjunto de retângulos."""
     display: Display
     rects: list[Rect]
     def __init__(self, display: Display, rects: list[Rect]) -> None: ...
     def print_scene(self) -> None:
-        """Imprime a cena inteira"""
+        """Renderiza a cena completa, incluindo todos os retângulos e o fundo."""
     def print_buffer(self) -> None:
-        """Imprime somente os pixels atualizados"""
+        """Renderiza apenas os pixels modificados desde a última atualização."""
