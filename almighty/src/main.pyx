@@ -162,7 +162,7 @@ cdef class Display:
         cdef int i, j
         for i in range(rect.old.y, rect.old.y + rect.old.h):
             for j in range(rect.old.x, rect.old.x + rect.old.w):
-                if intersection(rect.new, j, i):
+                if intersection(rect.new, j, i) or self.out_vision_dot(j, i):
                     continue
                 self._cleaned_pixels[self.cih].y = i + 1          # type: ignore
                 self._cleaned_pixels[self.cih].x = (j * 2) + 1          # type: ignore
@@ -189,7 +189,7 @@ cdef class Display:
     
     cdef bint out_vision_dot(self, int x, int y) noexcept nogil:
         return <bint> (
-            x <= 0 or y <= 0 or
+            x < 0 or y < 0 or
             x >= self.w or y >= self.h
         )
     

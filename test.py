@@ -33,6 +33,8 @@ def bouncy_ball():
     clear()
     try:
         scene.print_scene()
+        scene.Ball.sx = 4
+        scene.Ball.sy = 2
         while True:
             b = scene.Ball
             
@@ -43,7 +45,7 @@ def bouncy_ball():
             
             scene.Ball.move(1, 1)
             scene.print_buffer()
-            sleep(0.3)
+            sleep(0.2)
     except Exception:
         scene.exit()
 
