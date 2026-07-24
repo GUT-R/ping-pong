@@ -1,4 +1,9 @@
-from typing import Iterable, overload
+from typing import Iterable, overload, NamedTuple
+
+class BoolAxis(NamedTuple):
+    """Tupla com dois booleanos. (horizontal, vertical)"""
+    horizontal: bool
+    vertical: bool
 
 class Rect:
     """Representa um retângulo 2D com posição, tamanho, cor e velocidade.
@@ -121,6 +126,8 @@ class Display:
 
     def print_buffer(self) -> None:
         """Imprime o buffer atual de pixels na saída de renderização."""
+    def out_vision_rect(self, rect: Rect) -> BoolAxis:
+        """Ve"""
 
 class Scene:
     """Representa uma cena 2D composta por uma tela e um conjunto de retângulos."""

@@ -35,15 +35,17 @@ def bouncy_ball():
         scene.print_scene()
         scene.Ball.sx = 4
         scene.Ball.sy = 2
+        x = 1
+        y = 1
         while True:
             b = scene.Ball
             
             if b.x <= 0 or b.x + b.w >= display.w: # verifica se a bola bateu na borda esquerda ou direita
-                scene.Ball.sx *= -1
+                x *= -1
             if b.y <= 0 or b.y + b.h >= display.h: # verifica se a bola bateu na borda superior ou inferior
-                scene.Ball.sy *= -1
+                y *= -1
             
-            scene.Ball.move(1, 1)
+            scene.Ball.move(x, y)
             scene.print_buffer()
             sleep(0.2)
     except Exception:
