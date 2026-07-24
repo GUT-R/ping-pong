@@ -118,3 +118,5 @@ class Scene:
         """Renderiza a cena completa, incluindo todos os retângulos e o fundo."""
     def print_buffer(self) -> None:
         """Renderiza apenas os pixels modificados desde a última atualização."""
+    def exit(self) -> None:
+        """Limpa a memória do buffer e ajeita a cursor do terminal"""

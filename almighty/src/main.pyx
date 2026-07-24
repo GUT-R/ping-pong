@@ -253,3 +253,6 @@ cdef class Scene:
         self.display.reset_buffer()
         self.display.update_all(self.rects.values())
         self.display.print_buffer()
+    cpdef exit(self):
+        self.display.close()
+        print(f'\033[{self.display.h};0H\033[0m')
