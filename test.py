@@ -26,6 +26,13 @@ def main():
         sleep(0.33)
     scene.exit()
 
+def force_back(scene: Scene, rect_name: str):
+    r = scene[rect_name]
+    scene[rect_name].set_pos(
+        x=max(0, min(r.x, scene.display.w - r.w)),
+        y=max(0, min(r.y, scene.display.h - r.h))
+    )
+
 def bouncy_ball():
     scene = Scene(display, {
         'Ball': Rect(color=1, w=4, h=4, y=display.h//2 - 2, x=display.w//2 - 2)
@@ -42,8 +49,10 @@ def bouncy_ball():
             
             if b.x <= 0 or b.x + b.w >= display.w: # verifica se a bola bateu na borda esquerda ou direita
                 x *= -1
+                force_back(scene, 'Ball')
             if b.y <= 0 or b.y + b.h >= display.h: # verifica se a bola bateu na borda superior ou inferior
                 y *= -1
+                force_back(scene, 'Ball')
             
             scene.Ball.move(x, y)
             scene.print_buffer()

@@ -196,7 +196,7 @@ cdef class Display:
     cpdef tuple out_vision_rect(self, Rect rect): # type: ignore
         cdef c_Rect r = rect.data.new
         return (r.x <= 0 or r.x + r.w >= self.w, r.y <= 0 or r.y + r.h >= self.h)
-    
+
     cpdef reset_buffer(self):
         self.cih = 0
         self.dih = 0
