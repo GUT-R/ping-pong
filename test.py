@@ -21,10 +21,20 @@ def main():
     clear()
     scene.print_scene()
     sleep(1)
-    scene.A.move(1, 0)
+    for _ in range(5):
+        scene.A.move(x=1)
+        scene.print_buffer()
+        sleep(0.33)
+    print(f'\033[{display.h};0H\033[0m')
+
+def test():
     clear()
-    scene.print_scene()
-    sleep(2)
+    print('******\n******\n******\n')
+    sleep(1)
+    print('\033[00002;00003H##')
+    sleep(5)
+    print('\033[00004;00000H') # pula pra linha final
+    
 
 if __name__ == '__main__':
     main()

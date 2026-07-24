@@ -139,8 +139,8 @@ cdef class Display:
             for j in range(rect.old.x, rect.old.x + rect.old.w):
                 if intersection(rect.new, j, i):
                     continue
-                self._cleaned_pixels[self.cih].y = i              # type: ignore
-                self._cleaned_pixels[self.cih].x = j              # type: ignore
+                self._cleaned_pixels[self.cih].y = i + 1          # type: ignore
+                self._cleaned_pixels[self.cih].x = (j * 2) + 1          # type: ignore
                 self._cleaned_pixels[self.cih].color = self.color # type: ignore
                 self.cih += 1
     
@@ -151,10 +151,10 @@ cdef class Display:
         cdef int i, j
         for i in range(rect.new.y, rect.new.y + rect.new.h):
             for j in range(rect.new.x, rect.new.x + rect.new.w):
-                if intersection(rect.old, j, i) or self.out_vision(j, i) or same_colors:
+                if (same_colors and intersection(rect.old, j, i)) or self.out_vision(j, i):
                     continue
-                self._drawed_pixels[self.dih].y = i             # type: ignore
-                self._drawed_pixels[self.dih].x = j             # type: ignore
+                self._drawed_pixels[self.dih].y = i + 1         # type: ignore
+                self._drawed_pixels[self.dih].x = (j * 2) + 1   # type: ignore
                 self._drawed_pixels[self.dih].color = new_color # type: ignore
                 self.dih += 1
     
@@ -190,20 +190,22 @@ cdef class Display:
         cdef char* buf = <char*> malloc(sizeof(char) * total_size)
         cdef size_t offset = <size_t> 0
         cdef int i
-
+        
         for i in range(<int> lenght):
-            self.f_pixel(buf, offset, 
+            offset += self.f_pixel(buf, offset, 
                 pixels[i] # type: ignore
             )
-            offset += color_size
         buf[offset] = end_string # type: ignore
-
         return buf
         
     cpdef print_buffer(self):
         cdef char* clear_buffer = self.f_pixels(self._cleaned_pixels, <size_t> self.cih)
         cdef char* draw_buffer = self.f_pixels(self._drawed_pixels, <size_t> self.dih)
-        printf(b"%s%s", clear_buffer, draw_buffer) # type: ignore
+        
+        # Nota: o break no final é extremamente importante porque ele faz um flush por padrão. 
+        #  Sem ele, os pixels não são impressos imediatamente.
+        printf(b"%s%s\n", clear_buffer, draw_buffer) # type: ignore 
+        
         free(<void*> clear_buffer)
         free(<void*> draw_buffer)
     cdef char* f_screen(self):
