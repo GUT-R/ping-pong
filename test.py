@@ -37,19 +37,19 @@ def bouncy_ball():
     scene = Scene(display, {
         'Ball': Rect(color=1, w=4, h=4, y=display.h//2 - 2, x=display.w//2 - 2)
     })
-    clear()
+    scene.Ball.sx = 4
+    scene.Ball.sy = 2
+    x = 1
+    y = 1
     try:
+        clear()
         scene.print_scene()
-        scene.Ball.sx = 4
-        scene.Ball.sy = 2
-        x = 1
-        y = 1
         while True:
-            b = scene.Ball
+            b = scene.Ball # Só uma abreviação para não ficar escrevendo `scene.Ball` toda hora
             
             if b.x <= 0 or b.x + b.w >= display.w: # verifica se a bola bateu na borda esquerda ou direita
                 x *= -1
-                force_back(scene, 'Ball')
+                force_back(scene, 'Ball') # A bola pode pular para fora da janela se a velocidade for muito alta. Essa função força ela a ficar dentro da cena
             if b.y <= 0 or b.y + b.h >= display.h: # verifica se a bola bateu na borda superior ou inferior
                 y *= -1
                 force_back(scene, 'Ball')
@@ -57,7 +57,7 @@ def bouncy_ball():
             scene.Ball.move(x, y)
             scene.print_buffer()
             sleep(0.2)
-    except Exception:
+    except KeyboardInterrupt: # Para o programa com Ctrl+C (não me culpe se na sua máquina for diferente)
         scene.exit()
 
 def test():
