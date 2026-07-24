@@ -25,7 +25,7 @@ def main():
         scene.A.move(x=1)
         scene.print_buffer()
         sleep(0.33)
-    print(f'\033[{display.h};0H\033[0m')
+    print(f'\033[{display.h};0H\033[0m') # salta o cursor para a ultima linha. Se não o negocio do terminal escreve dentro da nossa janela
 
 def test():
     clear()
