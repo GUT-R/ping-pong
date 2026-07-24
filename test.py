@@ -44,7 +44,7 @@ def bouncy_ball():
             scene.Ball.move(1, 1)
             scene.print_buffer()
             sleep(0.3)
-    except KeyboardInterrupt:
+    except Exception:
         scene.exit()
 
 def test():
