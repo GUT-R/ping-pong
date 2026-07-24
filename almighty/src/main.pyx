@@ -189,14 +189,14 @@ cdef class Display:
     
     cdef bint out_vision_dot(self, int x, int y) noexcept nogil:
         return <bint> (
-            x < 0 or y < 0 or
+            x <= 0 or y <= 0 or
             x >= self.w or y >= self.h
         )
     
     cpdef bool out_vision_rect(self, Rect rect):
         cdef c_Rect r = rect.data.new
         return (
-            (r.x < 0 or r.y < 0) or
+            (r.x <= 0 or r.y <= 0) or
             (r.x + r.w >= self.w) or 
             (r.y + r.h >= self.h)
         )

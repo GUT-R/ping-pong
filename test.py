@@ -36,9 +36,9 @@ def bouncy_ball():
         while True:
             b = scene.Ball
             
-            if b.x < 0 or b.x + b.w >= display.w: # verifica se a bola bateu na borda esquerda ou direita
+            if b.x <= 0 or b.x + b.w >= display.w: # verifica se a bola bateu na borda esquerda ou direita
                 scene.Ball.sx *= -1
-            if b.y < 0 or b.y + b.h >= display.h: # verifica se a bola bateu na borda superior ou inferior
+            if b.y <= 0 or b.y + b.h >= display.h: # verifica se a bola bateu na borda superior ou inferior
                 scene.Ball.sy *= -1
             
             scene.Ball.move(1, 1)
