@@ -2,7 +2,7 @@ from libc.stdio cimport sprintf, printf # type: ignore
 from libc.stdlib cimport malloc, free   # type: ignore
 from libc.string cimport strlen, memcpy # type: ignore
 from libc.stdint cimport (              # type: ignore
-    uint8_t, uint16_t, uint32_t
+    int8_t, uint8_t, uint16_t, uint32_t
 )
 from typing import Iterable
 
@@ -65,8 +65,8 @@ cdef bint intersection(c_Rect r, int x, int y) nogil:
     return <bint> (r.y <= y < (r.y + r.h) and r.x <= x < (r.x + r.w))
 
 cdef class Rect:
-    cdef public uint8_t sx
-    cdef public uint8_t sy
+    cdef public int8_t sx
+    cdef public int8_t sy
     cdef c_TemporalRect data
     def __init__(self, color: int, *args: int, **kwargs: int) -> None:
         x, y, w, h, sx, sy = 0, 0, 1, 1, 1, 1
@@ -88,8 +88,8 @@ cdef class Rect:
         self.data.old.w = self.data.new.w = <uint8_t> kwargs.get('w', w)
         self.data.old.h = self.data.new.h = <uint8_t> kwargs.get('h', h)
         self.data.old.color = self.data.new.color = <uint8_t> color
-        self.sx = <uint8_t> kwargs.get('sx', sx)
-        self.sy = <uint8_t> kwargs.get('sy', sy)
+        self.sx = <int8_t> kwargs.get('sx', sx)
+        self.sy = <int8_t> kwargs.get('sy', sy)
     
     @property
     def y(self):
