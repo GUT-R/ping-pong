@@ -8,16 +8,15 @@ display = Display(40, 20, background_color=0, colors=[
     _("#54B249"), # preenchimento 2 (para o rect2)
 ])
 
-# Rect(id, cor, x, y, largura, altura, velocidade)
-rect1 = Rect(1, 0, 0, 3, 2, 1)
-rect2 = Rect(2, 2, 2, 4, 1, 1)
-
-scene = Scene(display, {
-    'A': rect1,
-    'B': rect2,
-})
-
 def main():
+    # Rect(id, cor, x, y, largura, altura, velocidade)
+    rect1 = Rect(1, 0, 0, 3, 2, 1)
+    rect2 = Rect(2, 2, 2, 4, 1, 1)
+
+    scene = Scene(display, {
+        'A': rect1,
+        'B': rect2,
+    })
     clear()
     scene.print_scene()
     sleep(1)
@@ -25,6 +24,28 @@ def main():
         scene.A.move(x=1)
         scene.print_buffer()
         sleep(0.33)
+    scene.exit()
+
+def bouncy_ball():
+    scene = Scene(display, {
+        'Ball': Rect(color=1, w=4, h=4, y=display.h//2 - 2, x=display.w//2 - 2)
+    })
+    clear()
+    try:
+        scene.print_scene()
+        while True:
+            b = scene.Ball
+            
+            if b.x < 0 or b.x + b.w >= display.w: # verifica se a bola bateu na borda esquerda ou direita
+                scene.Ball.sx *= -1
+            if b.y < 0 or b.y + b.h >= display.h: # verifica se a bola bateu na borda superior ou inferior
+                scene.Ball.sy *= -1
+            
+            scene.Ball.move(1, 1)
+            scene.print_buffer()
+            sleep(0.3)
+    except KeyboardInterrupt:
+        scene.exit()
 
 def test():
     clear()
@@ -36,4 +57,4 @@ def test():
     
 
 if __name__ == '__main__':
-    main()
+    bouncy_ball()

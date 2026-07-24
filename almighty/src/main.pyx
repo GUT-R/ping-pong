@@ -90,7 +90,32 @@ cdef class Rect:
         self.data.old.color = self.data.new.color = <uint8_t> color
         self.sx = <uint8_t> kwargs.get('sx', sx)
         self.sy = <uint8_t> kwargs.get('sy', sy)
-
+    
+    @property
+    def y(self):
+        return self.data.new.y
+    
+    @property
+    def x(self):
+        return self.data.new.x
+    
+    @property
+    def h(self):
+        return self.data.new.h
+    
+    @property
+    def w(self):
+        return self.data.new.w
+    
+    cpdef bool collision(self, Rect rect):
+        cdef c_Rect a = self.data.new
+        cdef c_Rect b = rect.data.new
+        return (
+            a.x < b.x + b.w and
+            a.x + a.w > b.x and
+            a.y < b.y + b.h and
+            a.y + a.h > b.y
+        )
 
     cpdef set_pos(self, int x=0, int y=0):
         self.data.old.x = self.data.new.x
@@ -151,23 +176,31 @@ cdef class Display:
         cdef int i, j
         for i in range(rect.new.y, rect.new.y + rect.new.h):
             for j in range(rect.new.x, rect.new.x + rect.new.w):
-                if (same_colors and intersection(rect.old, j, i)) or self.out_vision(j, i):
+                if (same_colors and intersection(rect.old, j, i)) or self.out_vision_dot(j, i):
                     continue
                 self._drawed_pixels[self.dih].y = i + 1         # type: ignore
                 self._drawed_pixels[self.dih].x = (j * 2) + 1   # type: ignore
                 self._drawed_pixels[self.dih].color = new_color # type: ignore
                 self.dih += 1
     
-    cdef bint out_vision(self, int x, int y) noexcept nogil:
+    cdef void update_on_buffer(self, c_TemporalRect rect) nogil:
+        self.clear_on_buffer(rect)
+        self.draw_on_buffer(rect)
+    
+    cdef bint out_vision_dot(self, int x, int y) noexcept nogil:
         return <bint> (
             x < 0 or y < 0 or
             x >= self.w or y >= self.h
         )
     
-    cdef void update_on_buffer(self, c_TemporalRect rect) nogil:
-        self.clear_on_buffer(rect)
-        self.draw_on_buffer(rect)
-    
+    cpdef bool out_vision_rect(self, Rect rect):
+        cdef c_Rect r = rect.data.new
+        return (
+            (r.x < 0 or r.y < 0) or
+            (r.x + r.w >= self.w) or 
+            (r.y + r.h >= self.h)
+        )
+
     cpdef reset_buffer(self):
         self.cih = 0
         self.dih = 0
@@ -244,7 +277,7 @@ cdef class Scene:
         for rect in self.rects.values():
             for i in range(rect.data.new.y, rect.data.new.y + rect.data.new.h):
                 for j in range(rect.data.new.x, rect.data.new.x + rect.data.new.w):
-                    if not self.display.out_vision(j, i):
+                    if not self.display.out_vision_dot(j, i):
                         self.display.f_color(screen + i * (color_size * self.display.w + reset_and_break_size) + j * color_size, rect.data.new.color)
         printf(b"%s", screen) # type: ignore
         free(<void*> screen)

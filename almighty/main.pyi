@@ -50,6 +50,8 @@ class Rect:
         **kwargs: int
     ) -> None: ...
     
+    def collision(self, rect: Rect) -> bool:
+        """Verifica se a instância está colidindo com outro `Rect`"""
     
     def set_pos(
         self,
@@ -77,6 +79,19 @@ class Rect:
         new_color: int
     ) -> None:
         """Atualiza o código de cor do retângulo para um valor entre 0 e 255 e guarda a cor anterior."""
+    
+    @property
+    def y(self) -> int:
+        """Posição vertical"""
+    @property
+    def x(self) -> int:
+        """Posição horizontal"""
+    @property
+    def h(self) -> int:
+        """Altura"""
+    @property
+    def w(self) -> int:
+        """Largura"""
 
 
 class Display:
