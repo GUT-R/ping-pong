@@ -1,15 +1,10 @@
-from typing import Iterable, overload, NamedTuple
-
-class BoolAxis(NamedTuple):
-    """Tupla com dois booleanos. (horizontal, vertical)"""
-    horizontal: bool
-    vertical: bool
+from typing import Iterable, overload
 
 class Rect:
     """Representa um retângulo 2D com posição, tamanho, cor e velocidade.
 
     Limitações:
-    - `sx` e `sy` ficam entre 0 e 255
+    - `sx` e `sy` ficam entre -128 e 127
     - as coordenadas permanecem entre 0 e 65535
     """
     sx: int
@@ -126,8 +121,12 @@ class Display:
 
     def print_buffer(self) -> None:
         """Imprime o buffer atual de pixels na saída de renderização."""
-    def out_vision_rect(self, rect: Rect) -> BoolAxis:
-        """Ve"""
+    def out_vision_rect(self, rect: Rect) -> tuple[int, int]:
+        """Verifica se o rect está totalmente dentro do display.
+
+        Returns:
+            tuple[int, int]: Horizontal e vertical
+        """
 
 class Scene:
     """Representa uma cena 2D composta por uma tela e um conjunto de retângulos."""
