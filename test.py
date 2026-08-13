@@ -3,11 +3,15 @@ from time import sleep
 from utils import clear, hexstring_to_tuple as _
 
 display = Display(40, 20, background_color=0, colors=[
-    _("#99D6A3"), # Cor de fundo
-    _("#8ECC4C"), # preenchimento 1 (para o rect1)
-    _("#54B249"), # preenchimento 2 (para o rect2)
+    _("#FFFFFF"), # Cor de fundo
+    _("#DDDDDD"), # cor de objeto
+    _("#FF0000"), # 2 Colisao superior
+    _("#0000FF"), # 3 Colisao inferior
+    _("#AA0000"), # 4 Colisao esquerda
+    _("#0000AA"), # 5 Colisao direita
+    _("#FF00FF"), # 6 Colisao de canto
+    _("#000000"), # 7 Colisao impossivel
 ])
-
 def main():
     # Rect(id, cor, x, y, largura, altura, velocidade)
     rect1 = Rect(1, 0, 0, 3, 2, 1)
@@ -35,12 +39,38 @@ def force_back(scene: Scene, rect_name: str):
 
 def test():
     clear()
-    print('******\n******\n******\n')
+    print('******\n*****2*\n******\n')
     sleep(1)
     print('\033[00002;00003H##')
     sleep(5)
     print('\033[00004;00000H') # pula pra linha final
     
-
+def test_collision():
+    scene = Scene(display, {
+        'Box': Rect(color=1, w=8, h=8, y=display.h//2 - 4, x=display.w//2 - 4)
+    })
+    for i in range(display.h):
+        for j in range(display.w):
+            rect = Rect(color=0, w=1, h=1, y=i, x=j)
+            t, d, l, r = scene.Box.border_collision(rect)
+            if not (t or d or l or r):
+                continue
+            color = 7
+            if ((t and l) or (t and r) or (d and l) or (d and r)):
+                color = 6
+            match (t, d, l, r):
+                case (True, False, False, False): 
+                    color = 2
+                case (False, True, False, False): 
+                    color = 3
+                case (False, False, True, False):
+                    color = 4
+                case (False, False, False, True): 
+                    color = 5
+                case _: pass
+            rect.set_color(color)
+            scene.rects[f'{i}X{j}'] = rect
+    clear()
+    scene.print_scene()
 if __name__ == '__main__':
-    main()
+    test_collision()

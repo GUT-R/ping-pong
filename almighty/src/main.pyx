@@ -116,6 +116,17 @@ cdef class Rect:
             a.y < b.y + b.h and
             a.y + a.h > b.y
         )
+    cpdef tuple border_collision(self, rect: Rect):
+        cdef c_Rect a = self.data.new
+        cdef c_Rect b = rect.data.new
+        cdef bint inner_hori = a.x <= b.x <= a.x + a.w or a.x <= b.x + b.w <= a.x + a.w
+        cdef bint inner_vert = a.y <= b.y <= a.y + a.h or a.y <= b.y + b.h <= a.y + a.h
+        return (
+            inner_hori and (b.y <= a.y <= b.y + b.h),
+            inner_vert and (b.x <= a.x <= b.x + b.w),
+            inner_hori and (b.y <= a.y + a.h <= b.y + b.h),
+            inner_vert and (b.x <= a.x + a.w <= b.x + b.w)
+        )
 
     cpdef set_pos(self, int x=0, int y=0):
         self.data.old.x = self.data.new.x
