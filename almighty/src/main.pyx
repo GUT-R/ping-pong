@@ -143,6 +143,8 @@ cdef class Rect:
     cpdef set_color(self, uint8_t new_color):
         self.data.old.color = self.data.new.color
         self.data.new.color = new_color
+    def __repr__(self) -> str:
+        return f'[yx=({self.y}, {self.x}), width/height={self.w}x{self.h}]'
 
 cdef class Display:
     cdef public uint16_t w

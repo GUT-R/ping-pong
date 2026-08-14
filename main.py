@@ -1,8 +1,11 @@
 from almighty.main import Display, Rect
-from ui import PingPongUI
+from ui import PrettyUI
 from utils import clear, hexstring_to_tuple as _, getch
 from random import choice
 import asyncio
+
+
+Δt = 0.016
 
 display = Display(40, 20, 0, colors=[
     _("#B0D6CD"),
@@ -12,7 +15,7 @@ display = Display(40, 20, 0, colors=[
 CENTER_X = display.w//2
 CENTER_Y = display.h//2
 
-scene = PingPongUI(display, {
+scene = PrettyUI(display, {
     'Ball': Rect(color=1, x=CENTER_X, y=CENTER_Y),
     'Player1': Rect(color=2, h=3, x=2, y=CENTER_Y-2),
     'Player2': Rect(color=2, h=3, x=display.w - 3, y=CENTER_Y-2),
@@ -22,14 +25,14 @@ running = True
 
 def bounce_ball_for_player(playerID: str):
     sx, sy = scene.Ball.sx, scene.Ball.sy # Ball speed
-    top, bottom, left, right = scene.Ball.border_collision(scene[playerID])
-    if top and sy > 0:
-        scene.Ball.sy = -1
-    if bottom and sy < 0:
+    top, bottom, left, right = scene[playerID].border_collision(scene.Ball)
+    if top     and sy > 0:
+        scene.Ball.sy =-1
+    if bottom  and sy < 0:
         scene.Ball.sy = 1
-    if left and sx > 0:
-        scene.Ball.sx = -1
-    if right and sx < 0:
+    if left    and sx > 0:
+        scene.Ball.sx =-1
+    if right   and sx < 0:
         scene.Ball.sx = 1
 
 def bounce_ball():
@@ -92,7 +95,7 @@ async def render():
     scene.print_scene()
     while running:
         scene.print_buffer()
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(Δt)
 
 async def main():
     await asyncio.gather(

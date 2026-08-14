@@ -96,6 +96,7 @@ class Rect:
     @property
     def w(self) -> int:
         """Largura"""
+    def __repr__(self) -> str: ...
 
 
 class Display:

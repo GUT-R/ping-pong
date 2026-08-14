@@ -5,7 +5,7 @@ from typing import Any
 PLAYER_1_SCORE_COLOR = _("#DA1414")
 PLAYER_2_SCORE_COLOR = _("#472DDD")
 DIVISION_BAR_COLOR   = _("#8C8C8C")
-BOTTOM_MESSAGE_COLOR = _("#FFFFFF")
+BOTTOM_MESSAGE_COLOR = _("#4B4B4B")
 BACKGROUND_COLOR     = _("#AFECFF")
 
 def c(string: Any, color: tuple[int, int, int]):
@@ -16,6 +16,18 @@ class PingPongUI(Scene):
         super().__init__(display, rects)
         self.score_player_1 = 0
         self.score_player_2 = 0
+    def print_ui(self) -> None: 
+        """Imprime algo depois do frame ser exibido"""
+    
+    def print_scene(self) -> None:
+        super().print_scene()
+        self.print_ui()
+    
+    def print_buffer(self) -> None:
+        super().print_buffer()
+        self.print_ui()
+
+class PrettyUI(PingPongUI):
     def print_ui(self):
         sp1        = c(f'{self.score_player_1:0>2}', PLAYER_1_SCORE_COLOR)
         sp2        = c(f'{self.score_player_2:0>2}', PLAYER_2_SCORE_COLOR)
@@ -34,11 +46,3 @@ class PingPongUI(Scene):
         
         print(f'\033[{self.display.h + 1};{esquerda}H' + left_bmsg)
         print(f'\033[{self.display.h + 1};{direita}H' + right_bmsg)
-        
-    def print_scene(self) -> None:
-        super().print_scene()
-        self.print_ui()
-    
-    def print_buffer(self) -> None:
-        super().print_buffer()
-        self.print_ui()
