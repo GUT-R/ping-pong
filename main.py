@@ -9,8 +9,8 @@ display = Display(40, 20, 0, colors=[
     _("#59B2F6"),
     _("#E65757"),
 ])
-CENTER_X = display.w//2-1
-CENTER_Y = display.h//2-1
+CENTER_X = display.w//2
+CENTER_Y = display.h//2
 
 scene = PingPongUI(display, {
     'Ball': Rect(color=1, x=CENTER_X, y=CENTER_Y),
@@ -20,33 +20,48 @@ scene = PingPongUI(display, {
 
 running = True
 
-async def set_ball_and_sleep():
+def bounce_ball_for_player(playerID: str):
+    sx, sy = scene.Ball.sx, scene.Ball.sy # Ball speed
+    top, bottom, left, right = scene.Ball.border_collision(scene[playerID])
+    if top and sy > 0:
+        scene.Ball.sy = -1
+    if bottom and sy < 0:
+        scene.Ball.sy = 1
+    if left and sx > 0:
+        scene.Ball.sx = -1
+    if right and sx < 0:
+        scene.Ball.sx = 1
+
+def bounce_ball():
+    bounce_ball_for_player('Player1')
+    bounce_ball_for_player('Player2')
+
+def reset_ball():
     scene.Ball.set_pos(
         CENTER_X,
         CENTER_Y
     )
     scene.Ball.sx = choice((-1, 1))
     scene.Ball.sy = choice((-1, 1))
-    await asyncio.sleep(3)
  
 async def ball_func():
-    await set_ball_and_sleep()
+    reset_ball()
+    await asyncio.sleep(3)
     while running:
+        bounce_ball()
+        # Rebate a bola no teto e no chão
         x, y = scene.Ball.x, scene.Ball.y
-        
-        if scene.Ball.collision(scene.Player1) or scene.Ball.collision(scene.Player2):
-            scene.Ball.sx *= -1
-        
         if y <= 0 or y >= display.h - scene.Ball.h:
-            y = max(0, min(y, display.h - scene.Ball.h))
             scene.Ball.sy *= -1
         
-        if x <= 0:
+        if x <= 0: # Se a bola encostou na parede da esquerda
             scene.score_player_2 += 1
-            await set_ball_and_sleep()
-        if x >= display.w - scene.Ball.w:
+            reset_ball()
+            await asyncio.sleep(3)
+        if x >= display.w - scene.Ball.w: # Se a bola encostou na parede da direita
             scene.score_player_1 += 1
-            await set_ball_and_sleep()
+            reset_ball()
+            await asyncio.sleep(3)
         
         scene.Ball.move(1, 1)
         await asyncio.sleep(0.1)
@@ -54,8 +69,7 @@ async def ball_func():
 async def game_controller():
     global running
     while running:
-        ch = await getch()
-        match ch:
+        match await getch():
             case 'w':
                 if scene.Player1.y > 0:
                     scene.Player1.move(y = -1)

@@ -4,7 +4,7 @@ from utils import clear, hexstring_to_tuple as _
 
 display = Display(40, 20, background_color=0, colors=[
     _("#FFFFFF"), # Cor de fundo
-    _("#DDDDDD"), # cor de objeto
+    _("#A3A3A3"), # cor de objeto
     _("#FF0000"), # 2 Colisao superior
     _("#0000FF"), # 3 Colisao inferior
     _("#AA0000"), # 4 Colisao esquerda
@@ -47,30 +47,45 @@ def test():
     
 def test_collision():
     scene = Scene(display, {
-        'Box': Rect(color=1, w=8, h=8, y=display.h//2 - 4, x=display.w//2 - 4)
+        'Box': Rect(color=1, w=1, h=1, y=display.h//2 - 1, x=display.w//2 - 1)
     })
     for i in range(display.h):
         for j in range(display.w):
-            rect = Rect(color=0, w=1, h=1, y=i, x=j)
+            rect = Rect(color=0, y=i, x=j)
             t, d, l, r = scene.Box.border_collision(rect)
             if not (t or d or l or r):
                 continue
             color = 7
             if ((t and l) or (t and r) or (d and l) or (d and r)):
                 color = 6
-            match (t, d, l, r):
-                case (True, False, False, False): 
-                    color = 2
-                case (False, True, False, False): 
-                    color = 3
-                case (False, False, True, False):
-                    color = 4
-                case (False, False, False, True): 
-                    color = 5
-                case _: pass
+            if t and not any((d, l, r)):
+                color = 2
+            elif d and not any((t, l, r)):
+                color = 3
+            elif l and not any((t, d, r)):
+                color = 4
+            elif r and not any((t, d, l)):
+                color = 5
+            rect.set_color(color)
+            scene.rects[f'{i}X{j}'] = rect
+    clear()
+    scene.print_scene()
+def test_one_collision():
+    scene = Scene(display, {
+        'Box': Rect(color=1, w=1, h=1, y=display.h//2 - 1, x=display.w//2 - 1)
+    })
+    for i in range(display.h):
+        for j in range(display.w):
+            color = 7
+            rect = Rect(color, y=i, x=j)
+            t, b, l, r = scene.Box.border_collision(rect)
+            if not (t or b or l or r):
+                continue
+            if r:
+                color = 2
             rect.set_color(color)
             scene.rects[f'{i}X{j}'] = rect
     clear()
     scene.print_scene()
 if __name__ == '__main__':
-    test_collision()
+    test_one_collision()

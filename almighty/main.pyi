@@ -52,6 +52,10 @@ class Rect:
     
     def collision(self, rect: Rect) -> bool:
         """Verifica se a instância está colidindo com outro `Rect`"""
+    def border_collision(self, rect: Rect) -> tuple[bool, bool, bool, bool]:
+        """Verifica se `rect` está colidindo com uma (ou duas) das bordas dessa instância.
+        Formato de saída (tuple): (cima, baixo, esquerda, direita)
+        """
     
     def set_pos(
         self,
