@@ -39,11 +39,11 @@ def force_back(scene: Scene, rect_name: str):
 
 def test():
     clear()
-    print('******\n*****2*\n******\n')
+    print('******\n******\n******\n')
     sleep(1)
     print('\033[00002;00003H##')
     sleep(5)
-    print('\033[00004;00000H') # pula pra linha final
+    print('\033[00004;00000H', end='') # pula pra linha final
     
 def test_collision():
     scene = Scene(display, {
@@ -88,4 +88,4 @@ def test_one_collision():
     clear()
     scene.print_scene()
 if __name__ == '__main__':
-    test_one_collision()
+    test()

@@ -62,14 +62,14 @@ class Rect:
         x: int = 1,
         y: int = 1
     ) -> None:
-        """Move o retângulo para a posição absoluta especificada e salva a posição anterior."""
+        """Move o retângulo para a posição absoluta especificada."""
 
     def sum_pos(
         self,
         x: int = 0,
         y: int = 0
     ) -> None:
-        """Ajusta a posição do retângulo somando os valores `x` e `y`, preservando a posição anterior."""
+        """Ajusta a posição do retângulo somando os valores `x` e `y`."""
 
     def move(
         self,
@@ -82,7 +82,7 @@ class Rect:
         self,
         new_color: int
     ) -> None:
-        """Atualiza o código de cor do retângulo para um valor entre 0 e 255 e guarda a cor anterior."""
+        """Atualiza o código de cor do retângulo para um valor entre 0 e 255."""
     
     @property
     def y(self) -> int:

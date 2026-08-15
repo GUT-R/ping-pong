@@ -5,6 +5,7 @@ import asyncio
 from os import name as os_name
 from subprocess import run
 from typing import Any
+import re
 
 def hexstring_to_tuple(hex_color: str) -> tuple[int, int, int]:
     hex_color = hex_color.lstrip('#')
@@ -23,7 +24,7 @@ def colorize_fore(string: Any, color: tuple[int, int, int]):
 def clear():
     run('cls' if os_name == 'nt' else 'clear')
 
-def getch_sync():
+def getch():
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
@@ -35,5 +36,44 @@ def getch_sync():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
-async def getch():
-    return await asyncio.to_thread(getch_sync)
+async def async_getch():
+    return await asyncio.to_thread(getch)
+
+def move_cursor(x: int, y: int):
+    print(f'\033[{y};{x}H', end='', flush=False)
+
+
+# ========== MADE WITH ChatGPT ==========
+_ANSI_SGR = re.compile(r"\x1B\[[0-9;]*m")
+def strip_ansi(o: str) -> str:
+    """
+    Removes ANSI SGR escape sequences from `o`.
+
+    Supports standard colors, 256 colors and true-color RGB
+    foreground/background sequences.
+
+    Examples
+    --------
+    >>> strip_ansi("\\033[31mLorem ipsum\\033[0m")
+    'Lorem ipsum'
+
+    >>> strip_ansi("\\033[38;5;32mLorem ipsum\\033[0m")
+    'Lorem ipsum'
+
+    >>> strip_ansi("\\033[38;2;255;100;50mLorem ipsum\\033[0m")
+    'Lorem ipsum'
+
+    >>> strip_ansi("\\033[48;2;20;40;80mLorem ipsum\\033[0m")
+    'Lorem ipsum'
+
+    >>> strip_ansi("\\033[38;2;255;100;50;48;2;20;40;80mLorem ipsum\\033[0m")
+    'Lorem ipsum'
+
+    >>> strip_ansi("Lorem")
+    'Lorem'
+
+    >>> strip_ansi("")
+    ''
+    """
+
+    return _ANSI_SGR.sub("", o)

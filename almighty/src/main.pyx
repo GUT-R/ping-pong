@@ -107,6 +107,9 @@ cdef class Rect:
     def w(self):
         return self.data.new.w
     
+    cdef void push_state(self) noexcept nogil:
+        self.data.old = self.data.new
+    
     cpdef bool collision(self, Rect rect):
         cdef c_Rect a = self.data.new
         cdef c_Rect b = rect.data.new
@@ -129,8 +132,6 @@ cdef class Rect:
         )
 
     cpdef set_pos(self, int x=0, int y=0):
-        self.data.old.x = self.data.new.x
-        self.data.old.y = self.data.new.y
         self.data.new.y = <uint16_t> y
         self.data.new.x = <uint16_t> x
     
@@ -218,6 +219,7 @@ cdef class Display:
         cdef Rect rect
         for rect in rects:
             self.update_on_buffer(rect.data)
+            rect.push_state()
     
     cdef void f_color(self, char* buf, color_index: uint8_t) noexcept nogil:
         memcpy(buf, self._pallete[color_index], color_size) # type: ignore

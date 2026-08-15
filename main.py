@@ -1,11 +1,11 @@
 from almighty.main import Display, Rect
 from ui import PrettyUI
-from utils import clear, hexstring_to_tuple as _, getch
+from utils import clear, hexstring_to_tuple as _, async_getch
 from random import choice
 import asyncio
 
 
-Δt = 0.016
+Δt = 0.0169
 
 display = Display(40, 20, 0, colors=[
     _("#B0D6CD"),
@@ -14,11 +14,11 @@ display = Display(40, 20, 0, colors=[
 ])
 CENTER_X = display.w//2
 CENTER_Y = display.h//2
-
+BALL_SPEED = 0.1
 scene = PrettyUI(display, {
-    'Ball': Rect(color=1, x=CENTER_X, y=CENTER_Y),
-    'Player1': Rect(color=2, h=3, x=2, y=CENTER_Y-2),
-    'Player2': Rect(color=2, h=3, x=display.w - 3, y=CENTER_Y-2),
+    'Ball':    Rect(color=1, w=1, h=1, x=CENTER_X,      y=CENTER_Y-1),
+    'Player1': Rect(color=2, w=1, h=3, x=2,             y=CENTER_Y-2),
+    'Player2': Rect(color=2, w=1, h=3, x=display.w - 3, y=CENTER_Y-2),
 })
 
 running = True
@@ -41,8 +41,8 @@ def bounce_ball():
 
 def reset_ball():
     scene.Ball.set_pos(
-        CENTER_X,
-        CENTER_Y
+        CENTER_X + choice((-1, 0, 1)),
+        CENTER_Y - 1 + choice((-1, 0, 1))
     )
     scene.Ball.sx = choice((-1, 1))
     scene.Ball.sy = choice((-1, 1))
@@ -67,12 +67,12 @@ async def ball_func():
             await asyncio.sleep(3)
         
         scene.Ball.move(1, 1)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.069)
 
 async def game_controller():
     global running
     while running:
-        match await getch():
+        match await async_getch():
             case 'w':
                 if scene.Player1.y > 0:
                     scene.Player1.move(y = -1)
