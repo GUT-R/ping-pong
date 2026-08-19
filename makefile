@@ -2,8 +2,8 @@
 
 ifeq ($(OS),Windows_NT)
     VENV_PYTHON := .venv/Scripts/python.exe
-    VENV_PIP := .venv/Scripts/pip.exe
-    PYTHON := python
+    
+    PYTHONVENV_PIP := .venv/Scripts/pip.exe := python
     SHELL := cmd.exe
     .SHELLFLAGS := /C
 else
@@ -18,7 +18,7 @@ venv:
 	$(PYTHON) -m venv .venv
 
 dependencies:
-	$(VENV_PIP) install -r dependencies.txt
+	$(VENV_PIP) install -r requirements.txt
 
 cython:
 	cd almighty && ../$(VENV_PYTHON) setup.py build_ext --inplace
